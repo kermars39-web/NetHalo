@@ -482,21 +482,20 @@ private final class NetworkAppRowView: NSView {
         super.init(frame: .zero)
         translatesAutoresizingMaskIntoConstraints = false
 
-        let initial = String(app.name.prefix(1)).uppercased()
-        let badge = InitialBadge(text: initial)
+        let appIcon = AppIconView(iconPath: app.iconPath, appName: app.name)
         let name = makeLabel(app.name, size: 11, weight: .medium, color: .labelColor)
         name.lineBreakMode = .byTruncatingTail
 
-        let down = makeLabel("↓ \(RateFormatter.menu(app.downloadBytesPerSecond))/s", size: 9, weight: .semibold, color: .glanceCyan, monospaced: true)
         let up = makeLabel("↑ \(RateFormatter.menu(app.uploadBytesPerSecond))/s", size: 9, weight: .semibold, color: .glanceBlue, monospaced: true)
-        down.alignment = .right
+        let down = makeLabel("↓ \(RateFormatter.menu(app.downloadBytesPerSecond))/s", size: 9, weight: .semibold, color: .glanceCyan, monospaced: true)
         up.alignment = .right
-        let rates = NSStackView(views: [down, up])
+        down.alignment = .right
+        let rates = NSStackView(views: [up, down])
         rates.orientation = .vertical
         rates.alignment = .trailing
         rates.spacing = 1
 
-        let stack = NSStackView(views: [badge, name, NSView(), rates])
+        let stack = NSStackView(views: [appIcon, name, NSView(), rates])
         stack.orientation = .horizontal
         stack.alignment = .centerY
         stack.spacing = 9
@@ -508,8 +507,8 @@ private final class NetworkAppRowView: NSView {
             stack.trailingAnchor.constraint(equalTo: trailingAnchor),
             stack.topAnchor.constraint(equalTo: topAnchor),
             stack.bottomAnchor.constraint(equalTo: bottomAnchor),
-            badge.widthAnchor.constraint(equalToConstant: 25),
-            badge.heightAnchor.constraint(equalToConstant: 25),
+            appIcon.widthAnchor.constraint(equalToConstant: 25),
+            appIcon.heightAnchor.constraint(equalToConstant: 25),
             rates.widthAnchor.constraint(greaterThanOrEqualToConstant: 72)
         ])
     }
@@ -549,7 +548,7 @@ private final class SettingsPanelView: NSView {
 
         let menuIcon = makeSymbol("arrow.up.arrow.down", size: 13, weight: .semibold, color: .glanceBlue)
         let menuTitle = makeLabel("菜单栏只显示网速", size: 12, weight: .semibold, color: .labelColor)
-        let menuSubtitle = makeLabel("下载与上传纵向排列，宽度固定，不会随数字晃动", size: 10, weight: .regular, color: .secondaryLabelColor)
+        let menuSubtitle = makeLabel("上传在上、下载在下，宽度固定，不会随数字晃动", size: 10, weight: .regular, color: .secondaryLabelColor)
         let menuLabels = NSStackView(views: [menuTitle, menuSubtitle])
         menuLabels.orientation = .vertical
         menuLabels.alignment = .leading
@@ -845,18 +844,27 @@ private final class ColorDot: NSView {
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 }
 
-private final class InitialBadge: NSView {
-    init(text: String) {
+private final class AppIconView: NSView {
+    init(iconPath: String?, appName: String) {
         super.init(frame: .zero)
         translatesAutoresizingMaskIntoConstraints = false
-        wantsLayer = true
-        layer?.cornerRadius = 7
-        layer?.backgroundColor = NSColor.glanceBlue.withAlphaComponent(0.10).cgColor
 
-        let label = makeLabel(text, size: 9, weight: .bold, color: .glanceBlue)
-        label.alignment = .center
-        addSubview(label)
-        label.pinToEdges(of: self)
+        let image: NSImage
+        if let iconPath {
+            image = NSWorkspace.shared.icon(forFile: iconPath)
+        } else {
+            image = NSImage(systemSymbolName: "terminal.fill", accessibilityDescription: nil) ?? NSImage()
+            wantsLayer = true
+            layer?.cornerRadius = 7
+            layer?.backgroundColor = NSColor.glanceBlue.withAlphaComponent(0.10).cgColor
+        }
+
+        let imageView = NSImageView(image: image)
+        imageView.imageScaling = .scaleProportionallyDown
+        imageView.setAccessibilityElement(true)
+        imageView.setAccessibilityLabel("\(appName) 图标")
+        addSubview(imageView)
+        imageView.pinToEdges(of: self)
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }

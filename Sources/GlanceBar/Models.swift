@@ -32,6 +32,7 @@ enum SystemHealth: Equatable {
 
 struct NetworkAppMetric: Identifiable, Equatable {
     let name: String
+    let iconPath: String?
     let downloadBytesPerSecond: Double
     let uploadBytesPerSecond: Double
 
