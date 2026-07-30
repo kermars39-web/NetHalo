@@ -822,7 +822,7 @@ private class SelectableGlassCardView: GlassCardView {
         super.init(frame: frameRect)
         let recognizer = NSClickGestureRecognizer(target: self, action: #selector(activateSelection))
         addGestureRecognizer(recognizer)
-        focusRingType = .exterior
+        focusRingType = .none
         setAccessibilityRole(.button)
     }
 
@@ -844,7 +844,6 @@ private class SelectableGlassCardView: GlassCardView {
     }
 
     @objc private func activateSelection() {
-        window?.makeFirstResponder(self)
         onSelect?()
     }
 
@@ -897,11 +896,6 @@ private class SelectableGlassCardView: GlassCardView {
         path.stroke()
     }
 
-    override var focusRingMaskBounds: NSRect { bounds.insetBy(dx: 1, dy: 1) }
-
-    override func drawFocusRingMask() {
-        NSBezierPath(roundedRect: focusRingMaskBounds, xRadius: 18, yRadius: 18).fill()
-    }
 }
 
 private class GlassCardView: NSView {
