@@ -8,13 +8,16 @@ final class MetricsStore: ObservableObject {
     @Published private(set) var downloadHistory: [Double] = []
     @Published private(set) var uploadHistory: [Double] = []
     @Published private(set) var topNetworkApps: [NetworkAppMetric] = []
+    @Published private(set) var topCPUApps: [ProcessAppMetric] = []
+    @Published private(set) var topMemoryApps: [ProcessAppMetric] = []
     @Published private(set) var networkAppsReady = false
+    @Published private(set) var resourceAppsReady = false
 
     private let sampler = MetricsSampler()
     private var timer: Timer?
-    private var samplesSinceNetworkRefresh = 0
+    private var samplesSinceAppRefresh = 0
     private var detailsVisible = false
-    private var networkRefreshInFlight = false
+    private var appRefreshInFlight = false
 
     func start() {
         guard timer == nil else { return }
@@ -35,7 +38,7 @@ final class MetricsStore: ObservableObject {
         scheduleTimer(interval: visible ? 1 : 2)
         if visible {
             sampleNow()
-            refreshNetworkApps()
+            refreshAppMetrics()
         }
     }
 
@@ -57,23 +60,28 @@ final class MetricsStore: ObservableObject {
         downloadHistory.appendKeepingLast(value.downloadBytesPerSecond, limit: 60)
         uploadHistory.appendKeepingLast(value.uploadBytesPerSecond, limit: 60)
 
-        samplesSinceNetworkRefresh += 1
-        if detailsVisible, samplesSinceNetworkRefresh >= 5 {
-            refreshNetworkApps()
+        samplesSinceAppRefresh += 1
+        if detailsVisible, samplesSinceAppRefresh >= 5 {
+            refreshAppMetrics()
         }
     }
 
-    private func refreshNetworkApps() {
-        guard !networkRefreshInFlight else { return }
-        networkRefreshInFlight = true
-        samplesSinceNetworkRefresh = 0
+    private func refreshAppMetrics() {
+        guard !appRefreshInFlight else { return }
+        appRefreshInFlight = true
+        samplesSinceAppRefresh = 0
 
         DispatchQueue.global(qos: .utility).async { [weak self] in
-            let values = ProcessNetworkSampler.sampleTopApps()
+            let resources = ProcessResourceSampler.sampleTopApps()
+            let network = ProcessNetworkSampler.sampleTopApps()
             DispatchQueue.main.async { [weak self] in
-                self?.networkAppsReady = true
-                self?.topNetworkApps = values
-                self?.networkRefreshInFlight = false
+                guard let self else { return }
+                self.networkAppsReady = true
+                self.resourceAppsReady = true
+                self.topNetworkApps = network
+                self.topCPUApps = resources.topCPUApps
+                self.topMemoryApps = resources.topMemoryApps
+                self.appRefreshInFlight = false
             }
         }
     }

@@ -47,11 +47,11 @@ final class MenuMeterView: NSView {
         let arrowFont = NSFont.systemFont(ofSize: 8.5, weight: .bold)
         let valueFont = NSFont.monospacedDigitSystemFont(ofSize: 8.5, weight: .medium)
         let paragraph = NSMutableParagraphStyle()
-        paragraph.alignment = .left
+        paragraph.alignment = .right
         paragraph.lineBreakMode = .byClipping
 
-        let arrowRect = NSRect(x: 1, y: y, width: 10, height: 11)
-        let valueRect = NSRect(x: 11, y: y, width: max(0, bounds.width - 12), height: 11)
+        let arrowRect = NSRect(x: 0, y: y, width: 8, height: 11)
+        let valueRect = NSRect(x: 8, y: y, width: max(0, bounds.width - 9), height: 11)
 
         (arrow as NSString).draw(
             in: arrowRect,

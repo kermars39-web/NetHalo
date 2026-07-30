@@ -3,6 +3,8 @@ import Combine
 
 @MainActor
 final class DashboardViewController: NSViewController {
+    static let panelSize = NSSize(width: 342, height: 550)
+
     private let model: MetricsStore
     private let settings: SettingsStore
     private let onQuit: () -> Void
@@ -12,7 +14,7 @@ final class DashboardViewController: NSViewController {
     private weak var networkCard: NetworkCardView?
     private weak var cpuCard: UsageCardView?
     private weak var memoryCard: UsageCardView?
-    private weak var networkAppsCard: NetworkAppsCardView?
+    private weak var appUsageCard: AppUsageCardView?
     private var contentView: NSView?
 
     init(model: MetricsStore, settings: SettingsStore, onQuit: @escaping () -> Void) {
@@ -28,6 +30,7 @@ final class DashboardViewController: NSViewController {
 
     override func loadView() {
         let effectView = NSVisualEffectView()
+        effectView.frame = NSRect(origin: .zero, size: Self.panelSize)
         effectView.material = .popover
         effectView.blendingMode = .withinWindow
         effectView.state = .active
@@ -37,6 +40,7 @@ final class DashboardViewController: NSViewController {
         tintView.pinToEdges(of: effectView)
 
         view = effectView
+        preferredContentSize = Self.panelSize
     }
 
     override func viewDidLoad() {
@@ -53,10 +57,22 @@ final class DashboardViewController: NSViewController {
 
         model.$topNetworkApps
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] values in
-                guard let self else { return }
-                self.networkAppsCard?.update(apps: values, ready: self.model.networkAppsReady)
-            }
+            .sink { [weak self] _ in self?.refreshAppUsage() }
+            .store(in: &cancellables)
+
+        model.$topCPUApps
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.refreshAppUsage() }
+            .store(in: &cancellables)
+
+        model.$topMemoryApps
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.refreshAppUsage() }
+            .store(in: &cancellables)
+
+        settings.$selectedDetailMetric
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.refreshAppUsage() }
             .store(in: &cancellables)
     }
 
@@ -80,7 +96,21 @@ final class DashboardViewController: NSViewController {
         )
     }
 
+    private func refreshAppUsage() {
+        let selected = settings.selectedDetailMetric
+        networkCard?.setMetricSelected(selected == .network)
+        cpuCard?.setMetricSelected(selected == .cpu)
+        memoryCard?.setMetricSelected(selected == .memory)
+        appUsageCard?.update(
+            metric: selected,
+            networkApps: model.topNetworkApps,
+            processApps: selected == .cpu ? model.topCPUApps : model.topMemoryApps,
+            ready: selected == .network ? model.networkAppsReady : model.resourceAppsReady
+        )
+    }
+
     private func install(_ newContent: NSView, animated: Bool) {
+        preferredContentSize = Self.panelSize
         newContent.alphaValue = animated ? 0 : 1
         view.addSubview(newContent)
         newContent.pinToEdges(of: view)
@@ -111,25 +141,29 @@ final class DashboardViewController: NSViewController {
         let network = NetworkCardView()
         let cpu = UsageCardView(title: "CPU", accent: .glanceBlue)
         let memory = UsageCardView(title: "内存", accent: .glanceViolet)
-        let networkApps = NetworkAppsCardView()
+        let appUsage = AppUsageCardView()
         let footer = makeFooter()
+
+        network.onSelect = { [weak settings] in settings?.selectDetailMetric(.network) }
+        cpu.onSelect = { [weak settings] in settings?.selectDetailMetric(.cpu) }
+        memory.onSelect = { [weak settings] in settings?.selectDetailMetric(.memory) }
 
         headerView = header
         networkCard = network
         cpuCard = cpu
         memoryCard = memory
-        networkAppsCard = networkApps
+        appUsageCard = appUsage
 
         let usageRow = NSStackView(views: [cpu, memory])
         usageRow.orientation = .horizontal
         usageRow.spacing = 12
         usageRow.distribution = .fillEqually
 
-        let stack = NSStackView(views: [header, network, usageRow, networkApps, footer])
+        let stack = NSStackView(views: [header, network, usageRow, appUsage, footer])
         stack.orientation = .vertical
         stack.alignment = .leading
         stack.spacing = 12
-        stack.setCustomSpacing(6, after: networkApps)
+        stack.setCustomSpacing(6, after: appUsage)
         stack.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(stack)
 
@@ -141,18 +175,18 @@ final class DashboardViewController: NSViewController {
             header.heightAnchor.constraint(equalToConstant: 40),
             network.heightAnchor.constraint(equalToConstant: 136),
             usageRow.heightAnchor.constraint(equalToConstant: 122),
-            networkApps.heightAnchor.constraint(equalToConstant: 154),
+            appUsage.heightAnchor.constraint(equalToConstant: 154),
             footer.heightAnchor.constraint(equalToConstant: 28),
             header.widthAnchor.constraint(equalTo: stack.widthAnchor),
             network.widthAnchor.constraint(equalTo: stack.widthAnchor),
             usageRow.widthAnchor.constraint(equalTo: stack.widthAnchor),
-            networkApps.widthAnchor.constraint(equalTo: stack.widthAnchor),
+            appUsage.widthAnchor.constraint(equalTo: stack.widthAnchor),
             footer.widthAnchor.constraint(equalTo: stack.widthAnchor)
         ])
 
         install(container, animated: animated)
         refreshDashboard()
-        networkApps.update(apps: model.topNetworkApps, ready: model.networkAppsReady)
+        refreshAppUsage()
     }
 
     private func showSettings(animated: Bool) {
@@ -264,12 +298,13 @@ private final class HeaderView: NSView {
     }
 }
 
-private final class NetworkCardView: GlassCardView {
+private final class NetworkCardView: SelectableGlassCardView {
     private let download = NetworkMetricView(title: "下载", symbol: "arrow.down", accent: .glanceCyan)
     private let upload = NetworkMetricView(title: "上传", symbol: "arrow.up", accent: .glanceBlue)
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
+        configureSelection(accent: .glanceBlue, accessibilityLabel: "网络占用应用")
 
         let title = makeLabel("网络流动", size: 12, weight: .semibold, color: .secondaryLabelColor)
         let symbol = makeSymbol("arrow.up.arrow.down", size: 11, weight: .semibold, color: .tertiaryLabelColor)
@@ -360,7 +395,7 @@ private final class NetworkMetricView: NSView {
     }
 }
 
-private final class UsageCardView: GlassCardView {
+private final class UsageCardView: SelectableGlassCardView {
     private let valueLabel = makeLabel("0%", size: 25, weight: .semibold, color: .labelColor, monospaced: true)
     private let subtitleLabel = makeLabel("", size: 10, weight: .medium, color: .tertiaryLabelColor)
     private let sparkline: SparklineView
@@ -368,6 +403,7 @@ private final class UsageCardView: GlassCardView {
     init(title: String, accent: NSColor) {
         sparkline = SparklineView(accent: accent, fixedMaximum: 100)
         super.init(frame: .zero)
+        configureSelection(accent: accent, accessibilityLabel: "\(title) 占用应用")
 
         let titleLabel = makeLabel(title, size: 11, weight: .semibold, color: .secondaryLabelColor)
         let dot = ColorDot(color: accent)
@@ -404,15 +440,15 @@ private final class UsageCardView: GlassCardView {
     }
 }
 
-private final class NetworkAppsCardView: GlassCardView {
+private final class AppUsageCardView: GlassCardView {
+    private let titleLabel = makeLabel("网络占用", size: 12, weight: .semibold, color: .secondaryLabelColor)
+    private let valueHeading = makeLabel("实时速度", size: 9, weight: .semibold, color: .tertiaryLabelColor)
     private let rows = NSStackView()
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
 
-        let title = makeLabel("网络占用", size: 12, weight: .semibold, color: .secondaryLabelColor)
-        let speed = makeLabel("实时速度", size: 9, weight: .semibold, color: .tertiaryLabelColor)
-        let header = NSStackView(views: [title, NSView(), speed])
+        let header = NSStackView(views: [titleLabel, NSView(), valueHeading])
         header.orientation = .horizontal
         header.alignment = .centerY
 
@@ -436,23 +472,54 @@ private final class NetworkAppsCardView: GlassCardView {
             rows.widthAnchor.constraint(equalTo: stack.widthAnchor)
         ])
 
-        update(apps: [], ready: false)
+        update(metric: .network, networkApps: [], processApps: [], ready: false)
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
-    func update(apps: [NetworkAppMetric], ready: Bool) {
+    func update(
+        metric: DetailMetric,
+        networkApps: [NetworkAppMetric],
+        processApps: [ProcessAppMetric],
+        ready: Bool
+    ) {
         for view in rows.arrangedSubviews {
             rows.removeArrangedSubview(view)
             view.removeFromSuperview()
         }
 
-        guard !apps.isEmpty else {
-            let message = ready ? "当前没有明显联网应用" : "正在读取应用网速…"
+        let hasApps = metric == .network ? !networkApps.isEmpty : !processApps.isEmpty
+        let emptyMessage: String
+        let loadingMessage: String
+        let emptySymbol: String
+
+        switch metric {
+        case .network:
+            titleLabel.stringValue = "网络占用"
+            valueHeading.stringValue = "实时速度"
+            emptyMessage = "当前没有明显联网应用"
+            loadingMessage = "正在读取应用网速…"
+            emptySymbol = "network.slash"
+        case .cpu:
+            titleLabel.stringValue = "CPU 占用"
+            valueHeading.stringValue = "当前占用"
+            emptyMessage = "当前没有可显示的进程"
+            loadingMessage = "正在读取 CPU 占用…"
+            emptySymbol = "cpu"
+        case .memory:
+            titleLabel.stringValue = "内存占用"
+            valueHeading.stringValue = "当前占用"
+            emptyMessage = "当前没有可显示的进程"
+            loadingMessage = "正在读取内存占用…"
+            emptySymbol = "memorychip"
+        }
+
+        guard hasApps else {
+            let message = ready ? emptyMessage : loadingMessage
             let label = makeLabel(message, size: 11, weight: .medium, color: .secondaryLabelColor)
             let row: NSStackView
             if ready {
-                let icon = makeSymbol("network.slash", size: 12, weight: .medium, color: .tertiaryLabelColor)
+                let icon = makeSymbol(emptySymbol, size: 12, weight: .medium, color: .tertiaryLabelColor)
                 row = NSStackView(views: [icon, label])
             } else {
                 let progress = NSProgressIndicator()
@@ -469,34 +536,79 @@ private final class NetworkAppsCardView: GlassCardView {
             return
         }
 
-        for app in apps.prefix(4) {
-            let row = NetworkAppRowView(app: app)
+        if metric == .network {
+            for app in networkApps.prefix(4) {
+                addRow(
+                    AppUsageRowView(
+                        name: app.name,
+                        iconPath: app.iconPath,
+                        primaryText: "↑ \(RateFormatter.menu(app.uploadBytesPerSecond))/s",
+                        primaryColor: .glanceBlue,
+                        secondaryText: "↓ \(RateFormatter.menu(app.downloadBytesPerSecond))/s",
+                        secondaryColor: .glanceCyan
+                    )
+                )
+            }
+            return
+        }
+
+        for app in processApps.prefix(4) {
+            let value: String
+            let color: NSColor
+            if metric == .cpu {
+                value = CPUFormatter.process(app.cpuPercent)
+                color = .glanceBlue
+            } else {
+                value = MemoryFormatter.process(app.memoryBytes)
+                color = .glanceViolet
+            }
+            addRow(
+                AppUsageRowView(
+                    name: app.name,
+                    iconPath: app.iconPath,
+                    primaryText: value,
+                    primaryColor: color
+                )
+            )
+        }
+    }
+
+    private func addRow(_ row: AppUsageRowView) {
             rows.addArrangedSubview(row)
             row.heightAnchor.constraint(equalToConstant: 25).isActive = true
             row.widthAnchor.constraint(equalTo: rows.widthAnchor).isActive = true
-        }
     }
 }
 
-private final class NetworkAppRowView: NSView {
-    init(app: NetworkAppMetric) {
+private final class AppUsageRowView: NSView {
+    init(
+        name appName: String,
+        iconPath: String?,
+        primaryText: String,
+        primaryColor: NSColor,
+        secondaryText: String? = nil,
+        secondaryColor: NSColor = .secondaryLabelColor
+    ) {
         super.init(frame: .zero)
         translatesAutoresizingMaskIntoConstraints = false
 
-        let appIcon = AppIconView(iconPath: app.iconPath, appName: app.name)
-        let name = makeLabel(app.name, size: 11, weight: .medium, color: .labelColor)
+        let appIcon = AppIconView(iconPath: iconPath, appName: appName)
+        let name = makeLabel(appName, size: 11, weight: .medium, color: .labelColor)
         name.lineBreakMode = .byTruncatingTail
 
-        let up = makeLabel("↑ \(RateFormatter.menu(app.uploadBytesPerSecond))/s", size: 9, weight: .semibold, color: .glanceBlue, monospaced: true)
-        let down = makeLabel("↓ \(RateFormatter.menu(app.downloadBytesPerSecond))/s", size: 9, weight: .semibold, color: .glanceCyan, monospaced: true)
-        up.alignment = .right
-        down.alignment = .right
-        let rates = NSStackView(views: [up, down])
-        rates.orientation = .vertical
-        rates.alignment = .trailing
-        rates.spacing = 1
+        let primary = makeLabel(primaryText, size: 9, weight: .semibold, color: primaryColor, monospaced: true)
+        primary.alignment = .right
+        let values = NSStackView(views: [primary])
+        values.orientation = .vertical
+        values.alignment = .trailing
+        values.spacing = 1
+        if let secondaryText {
+            let secondary = makeLabel(secondaryText, size: 9, weight: .semibold, color: secondaryColor, monospaced: true)
+            secondary.alignment = .right
+            values.addArrangedSubview(secondary)
+        }
 
-        let stack = NSStackView(views: [appIcon, name, NSView(), rates])
+        let stack = NSStackView(views: [appIcon, name, NSView(), values])
         stack.orientation = .horizontal
         stack.alignment = .centerY
         stack.spacing = 9
@@ -510,7 +622,7 @@ private final class NetworkAppRowView: NSView {
             stack.bottomAnchor.constraint(equalTo: bottomAnchor),
             appIcon.widthAnchor.constraint(equalToConstant: 25),
             appIcon.heightAnchor.constraint(equalToConstant: 25),
-            rates.widthAnchor.constraint(greaterThanOrEqualToConstant: 72)
+            values.widthAnchor.constraint(greaterThanOrEqualToConstant: 72)
         ])
     }
 
@@ -550,6 +662,10 @@ private final class SettingsPanelView: NSView {
         let menuIcon = makeSymbol("arrow.up.arrow.down", size: 13, weight: .semibold, color: .glanceBlue)
         let menuTitle = makeLabel("菜单栏只显示网速", size: 12, weight: .semibold, color: .labelColor)
         let menuSubtitle = makeLabel("上传在上、下载在下，宽度固定，不会随数字晃动", size: 10, weight: .regular, color: .secondaryLabelColor)
+        menuSubtitle.lineBreakMode = .byWordWrapping
+        menuSubtitle.maximumNumberOfLines = 2
+        menuSubtitle.preferredMaxLayoutWidth = 235
+        menuSubtitle.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         let menuLabels = NSStackView(views: [menuTitle, menuSubtitle])
         menuLabels.orientation = .vertical
         menuLabels.alignment = .leading
@@ -588,13 +704,15 @@ private final class SettingsPanelView: NSView {
         )
         privacyText.lineBreakMode = .byWordWrapping
         privacyText.maximumNumberOfLines = 0
+        privacyText.preferredMaxLayoutWidth = 270
+        privacyText.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         let privacyStack = NSStackView(views: [privacyHeader, privacyText])
         privacyStack.orientation = .vertical
         privacyStack.alignment = .leading
         privacyStack.spacing = 8
         let privacyCard = wrapInCard(privacyStack, horizontalPadding: 16)
 
-        let about = makeLabel("NetHalo 0.1 · 原生 macOS", size: 10, weight: .medium, color: .tertiaryLabelColor)
+        let about = makeLabel("NetHalo 1.0 · 原生 macOS", size: 10, weight: .medium, color: .tertiaryLabelColor)
         about.alignment = .center
 
         let stack = NSStackView(views: [header, menuCard, launchCard, launchError, privacyCard, NSView(), about])
@@ -691,6 +809,100 @@ private final class ToggleRow: NSView {
 }
 
 // MARK: - Drawing and shared UI
+
+private class SelectableGlassCardView: GlassCardView {
+    var onSelect: (() -> Void)?
+
+    private var selectionAccent = NSColor.glanceBlue
+    private var metricSelected = false
+    private var hovered = false
+    private var trackingArea: NSTrackingArea?
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        let recognizer = NSClickGestureRecognizer(target: self, action: #selector(activateSelection))
+        addGestureRecognizer(recognizer)
+        focusRingType = .exterior
+        setAccessibilityRole(.button)
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override var acceptsFirstResponder: Bool { true }
+
+    func configureSelection(accent: NSColor, accessibilityLabel: String) {
+        selectionAccent = accent
+        toolTip = "点击查看\(accessibilityLabel)"
+        setAccessibilityLabel(accessibilityLabel)
+    }
+
+    func setMetricSelected(_ selected: Bool) {
+        guard metricSelected != selected else { return }
+        metricSelected = selected
+        setAccessibilityValue(selected ? "已选中" : "未选中")
+        needsDisplay = true
+    }
+
+    @objc private func activateSelection() {
+        window?.makeFirstResponder(self)
+        onSelect?()
+    }
+
+    override func keyDown(with event: NSEvent) {
+        if event.keyCode == 36 || event.keyCode == 49 {
+            activateSelection()
+        } else {
+            super.keyDown(with: event)
+        }
+    }
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let trackingArea { removeTrackingArea(trackingArea) }
+        let area = NSTrackingArea(
+            rect: bounds,
+            options: [.activeInKeyWindow, .mouseEnteredAndExited],
+            owner: self
+        )
+        addTrackingArea(area)
+        trackingArea = area
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+        hovered = true
+        needsDisplay = true
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        hovered = false
+        needsDisplay = true
+    }
+
+    override func resetCursorRects() {
+        addCursorRect(bounds, cursor: .pointingHand)
+    }
+
+    override func draw(_ dirtyRect: NSRect) {
+        super.draw(dirtyRect)
+        guard metricSelected || hovered else { return }
+
+        let rect = bounds.insetBy(dx: 1.2, dy: 1.2)
+        let path = NSBezierPath(roundedRect: rect, xRadius: 17.5, yRadius: 17.5)
+        if metricSelected {
+            selectionAccent.withAlphaComponent(0.045).setFill()
+            path.fill()
+        }
+        selectionAccent.withAlphaComponent(metricSelected ? 0.72 : 0.28).setStroke()
+        path.lineWidth = metricSelected ? 1.5 : 1
+        path.stroke()
+    }
+
+    override var focusRingMaskBounds: NSRect { bounds.insetBy(dx: 1, dy: 1) }
+
+    override func drawFocusRingMask() {
+        NSBezierPath(roundedRect: focusRingMaskBounds, xRadius: 18, yRadius: 18).fill()
+    }
+}
 
 private class GlassCardView: NSView {
     override init(frame frameRect: NSRect) {

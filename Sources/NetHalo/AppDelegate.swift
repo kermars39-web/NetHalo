@@ -29,7 +29,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     }
 
     private func configureStatusItem() {
-        let item = NSStatusBar.system.statusItem(withLength: 44)
+        let item = NSStatusBar.system.statusItem(withLength: 38)
         guard let button = item.button else { return }
 
         button.image = nil
@@ -55,7 +55,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     }
 
     private func configurePopover() {
-        popover.contentSize = NSSize(width: 342, height: 550)
+        popover.contentSize = DashboardViewController.panelSize
         popover.behavior = .transient
         popover.animates = true
         popover.delegate = self

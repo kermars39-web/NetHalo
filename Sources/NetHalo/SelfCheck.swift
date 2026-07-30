@@ -9,6 +9,10 @@ enum SelfCheck {
         expect(RateFormatter.menu(850_000) == "850K", "KB 网速格式错误", failures: &failures)
         expect(RateFormatter.menu(1_250_000) == "1.2M", "MB 网速格式错误", failures: &failures)
         expect(RateFormatter.menu(1_500_000_000) == "1.5G", "GB 网速格式错误", failures: &failures)
+        expect(CPUFormatter.process(3.25) == "3.2%", "低 CPU 占用格式错误", failures: &failures)
+        expect(CPUFormatter.process(32.5) == "32%", "CPU 占用格式错误", failures: &failures)
+        expect(MemoryFormatter.process(536_870_912) == "512 MB", "进程内存格式错误", failures: &failures)
+        expect(DetailMetric(rawValue: "memory") == .memory, "详情类型恢复错误", failures: &failures)
 
         var history: [Double] = []
         for value in 0..<65 {
@@ -43,6 +47,16 @@ enum SelfCheck {
         expect(apps.count == 2, "分应用网速过滤或合并错误", failures: &failures)
         expect(apps.first?.name == "Google Chrome", "分应用网速排序错误", failures: &failures)
         expect(apps.first?.downloadBytesPerSecond == 6_000, "Helper 流量合并错误", failures: &failures)
+
+        let processFixture = """
+        99101 12.5 100000 Google Chrome Helper
+        99102 7.5 50000 Google Chrome Helper
+        99103 3.0 200000 WindowServer
+        """
+        let resources = ProcessResourceSampler.parsePSOutput(processFixture)
+        expect(resources.topCPUApps.first?.name == "Google Chrome", "CPU 应用合并或排序错误", failures: &failures)
+        expect(resources.topCPUApps.first?.cpuPercent == 20, "CPU Helper 合并错误", failures: &failures)
+        expect(resources.topMemoryApps.first?.name == "WindowServer", "内存应用排序错误", failures: &failures)
 
         if failures.isEmpty {
             print("SELF_CHECK_PASS")

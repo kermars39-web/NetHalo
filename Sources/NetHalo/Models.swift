@@ -40,6 +40,21 @@ struct NetworkAppMetric: Identifiable, Equatable {
     var totalBytesPerSecond: Double { downloadBytesPerSecond + uploadBytesPerSecond }
 }
 
+struct ProcessAppMetric: Identifiable, Equatable {
+    let name: String
+    let iconPath: String?
+    let cpuPercent: Double
+    let memoryBytes: UInt64
+
+    var id: String { name }
+}
+
+enum DetailMetric: String, CaseIterable, Equatable {
+    case network
+    case cpu
+    case memory
+}
+
 enum RateFormatter {
     static func menu(_ bytesPerSecond: Double) -> String {
         let value = max(0, bytesPerSecond)
@@ -84,6 +99,16 @@ enum MemoryFormatter {
             return String(format: "%.0f MB", Double(bytes) / 1_048_576)
         }
         return gigabytes(bytes)
+    }
+}
+
+enum CPUFormatter {
+    static func process(_ percent: Double) -> String {
+        let value = max(0, percent)
+        if value < 10 {
+            return String(format: "%.1f%%", value)
+        }
+        return String(format: "%.0f%%", value)
     }
 }
 
