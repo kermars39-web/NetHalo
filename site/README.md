@@ -2,6 +2,8 @@
 
 Bilingual product website for [NetHalo](https://github.com/kermars39-web/NetHalo).
 
+Production: <https://kermars39-web.github.io/NetHalo/>
+
 ## Local development
 
 ```bash

@@ -9,6 +9,8 @@
 
 [English](#english) · [简体中文](#简体中文)
 
+[Website / 产品主页](https://kermars39-web.github.io/NetHalo/) · [Download / 下载](https://github.com/kermars39-web/NetHalo/releases/latest/download/NetHalo-1.0-macOS-arm64.dmg)
+
 ![NetHalo — Your Mac, at a glance.](site/public/og.png)
 
 ## English

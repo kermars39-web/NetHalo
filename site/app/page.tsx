@@ -93,6 +93,7 @@ const copy = {
 const downloadUrl =
   "https://github.com/kermars39-web/NetHalo/releases/latest/download/NetHalo-1.0-macOS-arm64.dmg";
 const githubUrl = "https://github.com/kermars39-web/NetHalo";
+const assetBase = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
 export default function Home() {
   const [language, setLanguage] = useState<"zh" | "en">("zh");
@@ -106,7 +107,7 @@ export default function Home() {
     <main>
       <nav className="nav shell" aria-label="Primary navigation">
         <a className="brand" href="#top" aria-label="NetHalo home">
-          <Image src="/net-halo-icon.png" alt="" width={38} height={38} priority />
+          <Image src={`${assetBase}/net-halo-icon.png`} alt="" width={38} height={38} priority />
           <span>
             <strong>NetHalo</strong>
             <small>{text.navTag}</small>
@@ -160,7 +161,7 @@ export default function Home() {
             </div>
             <div className="product-panel-mock" aria-label="NetHalo product interface preview">
               <div className="mock-header">
-                <Image src="/net-halo-icon.png" alt="" width={38} height={38} />
+                <Image src={`${assetBase}/net-halo-icon.png`} alt="" width={38} height={38} />
                 <div>
                   <strong>NetHalo</strong>
                   <small>Live system overview</small>
@@ -267,7 +268,7 @@ export default function Home() {
 
       <section className="cta-section shell">
         <div className="cta-card">
-          <Image src="/net-halo-icon.png" alt="" width={76} height={76} />
+          <Image src={`${assetBase}/net-halo-icon.png`} alt="" width={76} height={76} />
           <h2>{text.ctaTitle}</h2>
           <p>{text.ctaText}</p>
           <a className="primary-button compact" href={downloadUrl}>
@@ -279,7 +280,7 @@ export default function Home() {
 
       <footer className="footer shell">
         <div className="footer-brand">
-          <Image src="/net-halo-icon.png" alt="" width={30} height={30} />
+          <Image src={`${assetBase}/net-halo-icon.png`} alt="" width={30} height={30} />
           <strong>NetHalo</strong>
         </div>
         <p>{text.footer}</p>
