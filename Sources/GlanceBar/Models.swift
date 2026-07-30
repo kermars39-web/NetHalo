@@ -16,7 +16,7 @@ struct MetricsSnapshot: Equatable {
     }
 }
 
-enum SystemHealth {
+enum SystemHealth: Equatable {
     case calm
     case working
     case busy

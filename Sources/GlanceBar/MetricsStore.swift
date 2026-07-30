@@ -20,12 +20,7 @@ final class MetricsStore: ObservableObject {
 
         _ = sampler.sample() // Seed the delta-based CPU and network counters.
         sampleNow()
-
-        let timer = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
-            self?.sampleNow()
-        }
-        RunLoop.main.add(timer, forMode: .common)
-        self.timer = timer
+        scheduleTimer(interval: 2)
     }
 
     func stop() {
@@ -34,10 +29,22 @@ final class MetricsStore: ObservableObject {
     }
 
     func setDetailsVisible(_ visible: Bool) {
+        guard detailsVisible != visible else { return }
         detailsVisible = visible
+        scheduleTimer(interval: visible ? 1 : 2)
         if visible {
+            sampleNow()
             refreshProcesses()
         }
+    }
+
+    private func scheduleTimer(interval: TimeInterval) {
+        timer?.invalidate()
+        let timer = Timer(timeInterval: interval, repeats: true) { [weak self] _ in
+            self?.sampleNow()
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        self.timer = timer
     }
 
     private func sampleNow() {

@@ -7,6 +7,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     private let settings = SettingsStore()
     private let popover = NSPopover()
     private var statusItem: NSStatusItem?
+    private weak var menuMeterView: MenuMeterView?
     private var cancellables = Set<AnyCancellable>()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -28,23 +29,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     }
 
     private func configureStatusItem() {
-        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        let item = NSStatusBar.system.statusItem(withLength: 44)
         guard let button = item.button else { return }
 
-        let icon = NSImage(
-            systemSymbolName: "waveform.path.ecg",
-            accessibilityDescription: "GlanceBar 系统状态"
-        )
-        icon?.isTemplate = true
-        button.image = icon
-        button.imagePosition = .imageLeading
+        button.image = nil
+        button.title = ""
         button.target = self
         button.action = #selector(handleStatusItemClick(_:))
         button.sendAction(on: [.leftMouseUp, .rightMouseUp])
         button.toolTip = "GlanceBar"
+        button.setAccessibilityLabel("GlanceBar 实时网速")
+
+        let meter = MenuMeterView()
+        button.addSubview(meter)
+        NSLayoutConstraint.activate([
+            meter.leadingAnchor.constraint(equalTo: button.leadingAnchor),
+            meter.trailingAnchor.constraint(equalTo: button.trailingAnchor),
+            meter.topAnchor.constraint(equalTo: button.topAnchor),
+            meter.bottomAnchor.constraint(equalTo: button.bottomAnchor)
+        ])
+        menuMeterView = meter
 
         statusItem = item
-        updateStatusTitle(model.snapshot)
+        updateStatusMeter(model.snapshot)
     }
 
     private func configurePopover() {
@@ -63,54 +70,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         model.$snapshot
             .receive(on: DispatchQueue.main)
             .sink { [weak self] snapshot in
-                self?.updateStatusTitle(snapshot)
-            }
-            .store(in: &cancellables)
-
-        settings.objectWillChange
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                DispatchQueue.main.async {
-                    guard let self else { return }
-                    self.updateStatusTitle(self.model.snapshot)
-                }
+                self?.updateStatusMeter(snapshot)
             }
             .store(in: &cancellables)
     }
 
-    private func updateStatusTitle(_ snapshot: MetricsSnapshot) {
+    private func updateStatusMeter(_ snapshot: MetricsSnapshot) {
         guard let button = statusItem?.button else { return }
-        var components: [String] = []
-
-        if settings.showNetwork {
-            components.append(
-                "↓\(RateFormatter.menu(snapshot.downloadBytesPerSecond))  ↑\(RateFormatter.menu(snapshot.uploadBytesPerSecond))"
-            )
-        }
-        if settings.showCPU {
-            components.append("CPU \(Int(snapshot.cpuPercent.rounded()))%")
-        }
-        if settings.showMemory {
-            components.append("MEM \(Int(snapshot.memoryPercent.rounded()))%")
-        }
-        if components.isEmpty {
-            components.append("Glance")
-        }
-
-        button.attributedTitle = NSAttributedString(
-            string: "  " + components.joined(separator: "   "),
-            attributes: [
-                .font: NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .medium),
-                .foregroundColor: NSColor.labelColor
-            ]
-        )
-
-        let symbolName = snapshot.health == .busy
-            ? "exclamationmark.triangle.fill"
-            : "waveform.path.ecg"
-        let icon = NSImage(systemSymbolName: symbolName, accessibilityDescription: snapshot.health.title)
-        icon?.isTemplate = true
-        button.image = icon
+        let download = RateFormatter.menu(snapshot.downloadBytesPerSecond)
+        let upload = RateFormatter.menu(snapshot.uploadBytesPerSecond)
+        menuMeterView?.update(download: download, upload: upload)
+        button.toolTip = "下载 \(download)/s · 上传 \(upload)/s"
+        button.setAccessibilityValue("下载 \(download) 每秒，上传 \(upload) 每秒")
     }
 
     @objc

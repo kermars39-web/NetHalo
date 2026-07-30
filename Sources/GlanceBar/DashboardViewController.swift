@@ -527,7 +527,7 @@ private final class SettingsPanelView: NSView {
         let back = makePlainButton(title: "", symbol: "chevron.left", target: self, action: #selector(goBack))
         back.toolTip = "返回状态面板"
         let title = makeLabel("设置", size: 18, weight: .semibold, color: .labelColor)
-        let subtitle = makeLabel("只留下你想在菜单栏看到的内容", size: 11, weight: .medium, color: .secondaryLabelColor)
+        let subtitle = makeLabel("保持简洁，不打扰菜单栏", size: 11, weight: .medium, color: .secondaryLabelColor)
         let titleStack = NSStackView(views: [title, subtitle])
         titleStack.orientation = .vertical
         titleStack.alignment = .leading
@@ -537,34 +537,19 @@ private final class SettingsPanelView: NSView {
         header.alignment = .centerY
         header.spacing = 10
 
-        let menuRows = NSStackView()
-        menuRows.orientation = .vertical
-        menuRows.spacing = 0
-        menuRows.addArrangedSubview(ToggleRow(
-            title: "实时网速",
-            subtitle: "下载与上传速度",
-            symbol: "arrow.up.arrow.down",
-            isOn: settings.showNetwork,
-            onChange: { [weak settings] in settings?.showNetwork = $0 }
-        ))
-        menuRows.addArrangedSubview(separator())
-        menuRows.addArrangedSubview(ToggleRow(
-            title: "CPU",
-            subtitle: "整机即时占用",
-            symbol: "cpu",
-            isOn: settings.showCPU,
-            onChange: { [weak settings] in settings?.showCPU = $0 }
-        ))
-        menuRows.addArrangedSubview(separator())
-        menuRows.addArrangedSubview(ToggleRow(
-            title: "内存",
-            subtitle: "活跃、驻留与压缩内存",
-            symbol: "memorychip",
-            isOn: settings.showMemory,
-            onChange: { [weak settings] in settings?.showMemory = $0 }
-        ))
-
-        let menuCard = wrapInCard(menuRows, horizontalPadding: 14)
+        let menuIcon = makeSymbol("arrow.up.arrow.down", size: 13, weight: .semibold, color: .glanceBlue)
+        let menuTitle = makeLabel("菜单栏只显示网速", size: 12, weight: .semibold, color: .labelColor)
+        let menuSubtitle = makeLabel("下载与上传纵向排列，宽度固定，不会随数字晃动", size: 10, weight: .regular, color: .secondaryLabelColor)
+        let menuLabels = NSStackView(views: [menuTitle, menuSubtitle])
+        menuLabels.orientation = .vertical
+        menuLabels.alignment = .leading
+        menuLabels.spacing = 2
+        let menuSummary = NSStackView(views: [menuIcon, menuLabels, NSView()])
+        menuSummary.orientation = .horizontal
+        menuSummary.alignment = .centerY
+        menuSummary.spacing = 10
+        menuSummary.heightAnchor.constraint(equalToConstant: 54).isActive = true
+        let menuCard = wrapInCard(menuSummary, horizontalPadding: 14)
 
         let launchRow = ToggleRow(
             title: "开机自动启动",
