@@ -12,7 +12,7 @@ final class DashboardViewController: NSViewController {
     private weak var networkCard: NetworkCardView?
     private weak var cpuCard: UsageCardView?
     private weak var memoryCard: UsageCardView?
-    private weak var processCard: ProcessCardView?
+    private weak var networkAppsCard: NetworkAppsCardView?
     private var contentView: NSView?
 
     init(model: MetricsStore, settings: SettingsStore, onQuit: @escaping () -> Void) {
@@ -51,9 +51,12 @@ final class DashboardViewController: NSViewController {
             .sink { [weak self] _ in self?.refreshDashboard() }
             .store(in: &cancellables)
 
-        model.$topProcesses
+        model.$topNetworkApps
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] values in self?.processCard?.update(processes: values) }
+            .sink { [weak self] values in
+                guard let self else { return }
+                self.networkAppsCard?.update(apps: values, ready: self.model.networkAppsReady)
+            }
             .store(in: &cancellables)
     }
 
@@ -108,21 +111,21 @@ final class DashboardViewController: NSViewController {
         let network = NetworkCardView()
         let cpu = UsageCardView(title: "CPU", accent: .glanceBlue)
         let memory = UsageCardView(title: "内存", accent: .glanceViolet)
-        let processes = ProcessCardView()
+        let networkApps = NetworkAppsCardView()
         let footer = makeFooter()
 
         headerView = header
         networkCard = network
         cpuCard = cpu
         memoryCard = memory
-        processCard = processes
+        networkAppsCard = networkApps
 
         let usageRow = NSStackView(views: [cpu, memory])
         usageRow.orientation = .horizontal
         usageRow.spacing = 12
         usageRow.distribution = .fillEqually
 
-        let stack = NSStackView(views: [header, network, usageRow, processes, footer])
+        let stack = NSStackView(views: [header, network, usageRow, networkApps, footer])
         stack.orientation = .vertical
         stack.alignment = .leading
         stack.spacing = 12
@@ -130,25 +133,25 @@ final class DashboardViewController: NSViewController {
         container.addSubview(stack)
 
         NSLayoutConstraint.activate([
-            stack.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 18),
-            stack.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -18),
-            stack.topAnchor.constraint(equalTo: container.topAnchor, constant: 18),
-            stack.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -14),
+            stack.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 16),
+            stack.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -16),
+            stack.topAnchor.constraint(equalTo: container.topAnchor, constant: 16),
+            stack.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -12),
             header.heightAnchor.constraint(equalToConstant: 40),
-            network.heightAnchor.constraint(equalToConstant: 142),
-            usageRow.heightAnchor.constraint(equalToConstant: 124),
-            processes.heightAnchor.constraint(equalToConstant: 164),
+            network.heightAnchor.constraint(equalToConstant: 136),
+            usageRow.heightAnchor.constraint(equalToConstant: 122),
+            networkApps.heightAnchor.constraint(equalToConstant: 164),
             footer.heightAnchor.constraint(equalToConstant: 28),
             header.widthAnchor.constraint(equalTo: stack.widthAnchor),
             network.widthAnchor.constraint(equalTo: stack.widthAnchor),
             usageRow.widthAnchor.constraint(equalTo: stack.widthAnchor),
-            processes.widthAnchor.constraint(equalTo: stack.widthAnchor),
+            networkApps.widthAnchor.constraint(equalTo: stack.widthAnchor),
             footer.widthAnchor.constraint(equalTo: stack.widthAnchor)
         ])
 
         install(container, animated: animated)
         refreshDashboard()
-        processes.update(processes: model.topProcesses)
+        networkApps.update(apps: model.topNetworkApps, ready: model.networkAppsReady)
     }
 
     private func showSettings(animated: Bool) {
@@ -400,15 +403,15 @@ private final class UsageCardView: GlassCardView {
     }
 }
 
-private final class ProcessCardView: GlassCardView {
+private final class NetworkAppsCardView: GlassCardView {
     private let rows = NSStackView()
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
 
-        let title = makeLabel("正在占用", size: 12, weight: .semibold, color: .secondaryLabelColor)
-        let cpu = makeLabel("CPU", size: 9, weight: .semibold, color: .tertiaryLabelColor)
-        let header = NSStackView(views: [title, NSView(), cpu])
+        let title = makeLabel("网络占用", size: 12, weight: .semibold, color: .secondaryLabelColor)
+        let speed = makeLabel("实时速度", size: 9, weight: .semibold, color: .tertiaryLabelColor)
+        let header = NSStackView(views: [title, NSView(), speed])
         header.orientation = .horizontal
         header.alignment = .centerY
 
@@ -432,24 +435,31 @@ private final class ProcessCardView: GlassCardView {
             rows.widthAnchor.constraint(equalTo: stack.widthAnchor)
         ])
 
-        update(processes: [])
+        update(apps: [], ready: false)
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
-    func update(processes: [ProcessMetric]) {
+    func update(apps: [NetworkAppMetric], ready: Bool) {
         for view in rows.arrangedSubviews {
             rows.removeArrangedSubview(view)
             view.removeFromSuperview()
         }
 
-        guard !processes.isEmpty else {
-            let loading = makeLabel("正在读取应用占用…", size: 11, weight: .medium, color: .secondaryLabelColor)
-            let progress = NSProgressIndicator()
-            progress.style = .spinning
-            progress.controlSize = .small
-            progress.startAnimation(nil)
-            let row = NSStackView(views: [progress, loading])
+        guard !apps.isEmpty else {
+            let message = ready ? "当前没有明显联网应用" : "正在读取应用网速…"
+            let label = makeLabel(message, size: 11, weight: .medium, color: .secondaryLabelColor)
+            let row: NSStackView
+            if ready {
+                let icon = makeSymbol("network.slash", size: 12, weight: .medium, color: .tertiaryLabelColor)
+                row = NSStackView(views: [icon, label])
+            } else {
+                let progress = NSProgressIndicator()
+                progress.style = .spinning
+                progress.controlSize = .small
+                progress.startAnimation(nil)
+                row = NSStackView(views: [progress, label])
+            }
             row.orientation = .horizontal
             row.alignment = .centerY
             row.spacing = 8
@@ -458,8 +468,8 @@ private final class ProcessCardView: GlassCardView {
             return
         }
 
-        for process in processes.prefix(4) {
-            let row = ProcessRowView(process: process)
+        for app in apps.prefix(4) {
+            let row = NetworkAppRowView(app: app)
             rows.addArrangedSubview(row)
             row.heightAnchor.constraint(equalToConstant: 25).isActive = true
             row.widthAnchor.constraint(equalTo: rows.widthAnchor).isActive = true
@@ -467,26 +477,26 @@ private final class ProcessCardView: GlassCardView {
     }
 }
 
-private final class ProcessRowView: NSView {
-    init(process: ProcessMetric) {
+private final class NetworkAppRowView: NSView {
+    init(app: NetworkAppMetric) {
         super.init(frame: .zero)
         translatesAutoresizingMaskIntoConstraints = false
 
-        let initial = String(process.name.prefix(1)).uppercased()
+        let initial = String(app.name.prefix(1)).uppercased()
         let badge = InitialBadge(text: initial)
-        let name = makeLabel(process.name, size: 11, weight: .medium, color: .labelColor)
+        let name = makeLabel(app.name, size: 11, weight: .medium, color: .labelColor)
         name.lineBreakMode = .byTruncatingTail
-        let memory = makeLabel(MemoryFormatter.process(process.memoryBytes), size: 9, weight: .medium, color: .tertiaryLabelColor)
 
-        let labels = NSStackView(views: [name, memory])
-        labels.orientation = .vertical
-        labels.alignment = .leading
-        labels.spacing = 1
+        let down = makeLabel("↓ \(RateFormatter.menu(app.downloadBytesPerSecond))/s", size: 9, weight: .semibold, color: .glanceCyan, monospaced: true)
+        let up = makeLabel("↑ \(RateFormatter.menu(app.uploadBytesPerSecond))/s", size: 9, weight: .semibold, color: .glanceBlue, monospaced: true)
+        down.alignment = .right
+        up.alignment = .right
+        let rates = NSStackView(views: [down, up])
+        rates.orientation = .vertical
+        rates.alignment = .trailing
+        rates.spacing = 1
 
-        let cpuColor: NSColor = process.cpuPercent >= 50 ? .glanceOrange : .labelColor
-        let cpu = makeLabel(String(format: "%.1f%%", process.cpuPercent), size: 11, weight: .semibold, color: cpuColor, monospaced: true)
-
-        let stack = NSStackView(views: [badge, labels, NSView(), cpu])
+        let stack = NSStackView(views: [badge, name, NSView(), rates])
         stack.orientation = .horizontal
         stack.alignment = .centerY
         stack.spacing = 9
@@ -500,7 +510,7 @@ private final class ProcessRowView: NSView {
             stack.bottomAnchor.constraint(equalTo: bottomAnchor),
             badge.widthAnchor.constraint(equalToConstant: 25),
             badge.heightAnchor.constraint(equalToConstant: 25),
-            cpu.widthAnchor.constraint(greaterThanOrEqualToConstant: 48)
+            rates.widthAnchor.constraint(greaterThanOrEqualToConstant: 72)
         ])
     }
 

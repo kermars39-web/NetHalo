@@ -30,6 +30,20 @@ enum SelfCheck {
         expect((0...100).contains(live.memoryPercent), "内存采样超出范围", failures: &failures)
         expect(live.downloadBytesPerSecond >= 0 && live.uploadBytesPerSecond >= 0, "网速采样出现负数", failures: &failures)
 
+        let nettopFixture = """
+        ,bytes_in,bytes_out,
+        Google Chrome H.99991,100000,10000,
+        ,bytes_in,bytes_out,
+        Google Chrome H.99991,4000,1000,
+        Google Chrome H.99992,2000,500,
+        ChatGPT.99993,1200,300,
+        mDNSResponder.99994,9000,9000,
+        """
+        let apps = ProcessNetworkSampler.parseDeltaCSV(nettopFixture)
+        expect(apps.count == 2, "分应用网速过滤或合并错误", failures: &failures)
+        expect(apps.first?.name == "Google Chrome", "分应用网速排序错误", failures: &failures)
+        expect(apps.first?.downloadBytesPerSecond == 6_000, "Helper 流量合并错误", failures: &failures)
+
         if failures.isEmpty {
             print("SELF_CHECK_PASS")
             return 0

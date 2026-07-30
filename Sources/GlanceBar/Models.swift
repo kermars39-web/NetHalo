@@ -30,13 +30,13 @@ enum SystemHealth: Equatable {
     }
 }
 
-struct ProcessMetric: Identifiable, Equatable {
-    let pid: Int32
+struct NetworkAppMetric: Identifiable, Equatable {
     let name: String
-    let cpuPercent: Double
-    let memoryBytes: UInt64
+    let downloadBytesPerSecond: Double
+    let uploadBytesPerSecond: Double
 
-    var id: Int32 { pid }
+    var id: String { name }
+    var totalBytesPerSecond: Double { downloadBytesPerSecond + uploadBytesPerSecond }
 }
 
 enum RateFormatter {
