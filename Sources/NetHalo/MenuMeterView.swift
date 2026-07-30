@@ -2,6 +2,8 @@ import AppKit
 
 @MainActor
 final class MenuMeterView: NSView {
+    private static let verticalOpticalOffset: CGFloat = -1
+
     private var download = "0K"
     private var upload = "0K"
 
@@ -32,13 +34,13 @@ final class MenuMeterView: NSView {
         drawRow(
             arrow: "↑",
             value: upload,
-            y: bounds.midY + 0.2,
+            y: bounds.midY + 0.2 + Self.verticalOpticalOffset,
             color: .systemBlue
         )
         drawRow(
             arrow: "↓",
             value: download,
-            y: max(0, bounds.midY - 10.5),
+            y: max(0, bounds.midY - 10.5 + Self.verticalOpticalOffset),
             color: .systemTeal
         )
     }
