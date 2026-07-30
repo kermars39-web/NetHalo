@@ -2,7 +2,7 @@ import AppKit
 import Darwin
 
 @main
-enum GlanceBarMain {
+enum NetHaloMain {
     static func main() {
         if CommandLine.arguments.contains("--self-test") {
             exit(SelfCheck.run())

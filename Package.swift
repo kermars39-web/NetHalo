@@ -3,16 +3,17 @@
 import PackageDescription
 
 let package = Package(
-    name: "GlanceBar",
+    name: "NetHalo",
     platforms: [
         .macOS(.v13)
     ],
     products: [
-        .executable(name: "GlanceBar", targets: ["GlanceBar"])
+        .executable(name: "NetHalo", targets: ["NetHalo"])
     ],
     targets: [
         .executableTarget(
-            name: "GlanceBar",
+            name: "NetHalo",
+            path: "Sources/NetHalo",
             linkerSettings: [
                 .linkedFramework("AppKit"),
                 .linkedFramework("ServiceManagement")

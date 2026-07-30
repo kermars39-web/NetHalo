@@ -184,7 +184,7 @@ final class DashboardViewController: NSViewController {
             target: self,
             action: #selector(quit)
         )
-        quitButton.toolTip = "退出 GlanceBar"
+        quitButton.toolTip = "退出 NetHalo"
 
         let buttons = NSStackView(views: [settingsButton, quitButton])
         buttons.orientation = .horizontal
@@ -224,7 +224,7 @@ private final class HeaderView: NSView {
         translatesAutoresizingMaskIntoConstraints = false
 
         let icon = SymbolBadge(symbol: "waveform.path.ecg", color: .glanceBlue)
-        let title = makeLabel("GlanceBar", size: 17, weight: .semibold, color: .labelColor)
+        let title = makeLabel("NetHalo", size: 17, weight: .semibold, color: .labelColor)
         let subtitle = makeLabel("最近一分钟 · 每秒刷新", size: 11, weight: .medium, color: .secondaryLabelColor)
 
         let titleStack = NSStackView(views: [title, subtitle])
@@ -581,7 +581,7 @@ private final class SettingsPanelView: NSView {
         privacyHeader.orientation = .horizontal
         privacyHeader.spacing = 7
         let privacyText = makeLabel(
-            "GlanceBar 仅在本机读取系统公开统计信息，不需要管理员权限，不上传数据，也不会扫描文件内容。",
+            "NetHalo 仅在本机读取系统公开统计信息，不需要管理员权限，不上传数据，也不会扫描文件内容。",
             size: 11,
             weight: .regular,
             color: .secondaryLabelColor
@@ -594,7 +594,7 @@ private final class SettingsPanelView: NSView {
         privacyStack.spacing = 8
         let privacyCard = wrapInCard(privacyStack, horizontalPadding: 16)
 
-        let about = makeLabel("GlanceBar 0.1 · 原生 macOS", size: 10, weight: .medium, color: .tertiaryLabelColor)
+        let about = makeLabel("NetHalo 0.1 · 原生 macOS", size: 10, weight: .medium, color: .tertiaryLabelColor)
         about.alignment = .center
 
         let stack = NSStackView(views: [header, menuCard, launchCard, launchError, privacyCard, NSView(), about])

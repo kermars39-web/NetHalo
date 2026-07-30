@@ -37,8 +37,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         button.target = self
         button.action = #selector(handleStatusItemClick(_:))
         button.sendAction(on: [.leftMouseUp, .rightMouseUp])
-        button.toolTip = "GlanceBar"
-        button.setAccessibilityLabel("GlanceBar 实时网速")
+        button.toolTip = "NetHalo"
+        button.setAccessibilityLabel("NetHalo 实时网速")
 
         let meter = MenuMeterView()
         button.addSubview(meter)
@@ -107,12 +107,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     private func showContextMenu(from button: NSStatusBarButton) {
         let menu = NSMenu()
 
-        let openItem = NSMenuItem(title: "打开 GlanceBar", action: #selector(openPopover), keyEquivalent: "")
+        let openItem = NSMenuItem(title: "打开 NetHalo", action: #selector(openPopover), keyEquivalent: "")
         openItem.target = self
         menu.addItem(openItem)
         menu.addItem(.separator())
 
-        let quitItem = NSMenuItem(title: "退出 GlanceBar", action: #selector(quitApplication), keyEquivalent: "q")
+        let quitItem = NSMenuItem(title: "退出 NetHalo", action: #selector(quitApplication), keyEquivalent: "q")
         quitItem.target = self
         menu.addItem(quitItem)
 

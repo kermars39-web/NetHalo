@@ -1,4 +1,4 @@
-# GlanceBar
+# NetHalo
 
 一款原生、轻量、只在本机运行的 macOS 菜单栏状态工具。
 
@@ -18,19 +18,19 @@
 ./Scripts/build-app.sh
 ```
 
-构建产物位于 `dist/GlanceBar.app`。
+构建产物位于 `dist/NetHalo.app`。
 
 ## 开发验证
 
 ```bash
 swift build --disable-sandbox -c release
-.build/release/GlanceBar --self-test
+.build/release/NetHalo --self-test
 ```
 
 ## 卸载
 
-退出 GlanceBar 后移除 `/Applications/GlanceBar.app`。如需同时清理偏好设置，再移除：
+退出 NetHalo 后移除 `/Applications/NetHalo.app`。如需同时清理偏好设置，再移除：
 
 ```text
-~/Library/Preferences/com.kermars.glancebar.plist
+~/Library/Preferences/com.kermars.nethalo.plist
 ```

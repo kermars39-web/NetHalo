@@ -5,15 +5,15 @@
     <key>CFBundleDevelopmentRegion</key>
     <string>zh_CN</string>
     <key>CFBundleExecutable</key>
-    <string>GlanceBar</string>
+    <string>NetHalo</string>
     <key>CFBundleIdentifier</key>
-    <string>com.kermars.glancebar</string>
+    <string>com.kermars.nethalo</string>
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>
-    <string>GlanceBar</string>
+    <string>NetHalo</string>
     <key>CFBundleDisplayName</key>
-    <string>GlanceBar</string>
+    <string>NetHalo</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>

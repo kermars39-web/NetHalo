@@ -1,8 +1,8 @@
-# GlanceBar 项目说明
+# NetHalo 项目说明
 
 ## 定位
 
-GlanceBar 是一款仅在本机运行的原生 macOS 菜单栏状态工具。目标是用更现代、更克制的界面，替代用户当前通过 iStat Menus 查看网速、CPU 和内存占用的核心场景。
+NetHalo 是一款仅在本机运行的原生 macOS 菜单栏状态工具。目标是用更现代、更克制的界面，替代用户当前通过 iStat Menus 查看网速、CPU 和内存占用的核心场景。
 
 ## 当前范围
 
