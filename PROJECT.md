@@ -1,38 +1,31 @@
-# NetHalo 项目说明
+# NetHalo Project Scope / 项目范围
 
-## 定位
+Current version / 当前版本：**1.0**
 
-NetHalo 是一款仅在本机运行的原生 macOS 菜单栏状态工具。目标是用更现代、更克制的界面，替代用户当前通过 iStat Menus 查看网速、CPU 和内存占用的核心场景。
+## Goals / 目标
 
-当前版本：1.0。
+NetHalo is a native macOS menu bar utility for monitoring network speed, CPU, memory, and per-app resource usage with a compact, low-distraction interface.
 
-## 当前范围
+NetHalo 是一款原生 macOS 菜单栏工具，以紧凑、低干扰的方式展示网速、CPU、内存和分应用资源占用。
 
-- 菜单栏以固定宽度双行显示实时下载和上传，不显示 CPU 与内存
-- 点击后显示最近一分钟趋势
-- 点击网络、CPU 或内存卡片，切换显示对应的分应用占用排行
-- 记住最后一次选中的排行类型，下次打开继续显示
-- 应用排行优先显示真实应用图标，所有双行速度统一为上传在上、下载在下
-- 网络详情卡片统一为上传在左、下载在右
-- 主面板和设置页均固定为同一窄宽
-- 支持系统官方开机启动能力
-- 不联网、不上传数据、不使用管理员权限
+## Current scope / 当前范围
 
-## 明确不做
+- Fixed-width, two-line upload and download meter in the menu bar / 菜单栏固定宽度双行显示上传和下载速度
+- One-minute network, CPU, and memory trends / 最近一分钟的网络、CPU 和内存趋势
+- Switchable per-app rankings for network, CPU, and memory / 可切换的网络、CPU、内存分应用排行
+- Persistent selection between launches / 记住上次选择
+- Native launch-at-login support / 使用系统原生开机启动能力
+- Local-only processing with no telemetry or uploads / 完全本地处理，不含遥测和数据上传
 
-首版不读取温度、GPU 功耗、风扇和私有 SMC 数据，避免引入管理员辅助组件、免密授权和系统版本兼容风险。
+## Non-goals for 1.x / 1.x 暂不包含
 
-## 运行边界
+Temperature, GPU power, fan control, and private SMC access are intentionally excluded. These features would require privileged helpers and introduce additional security and compatibility costs.
 
-- 技术栈：Swift、AppKit、Combine
-- 最低系统：macOS 13
-- 当前试用环境：Apple Silicon / macOS 27 beta
-- 形态：本机菜单栏常驻应用，不对外提供服务
+暂不读取温度、GPU 功耗、风扇或私有 SMC 数据，避免引入管理员辅助程序以及额外的安全与兼容成本。
 
-## 验收口径
+## Technical baseline / 技术基线
 
-- 菜单栏每 2 秒刷新，面板展开时每秒刷新
-- 点击网络、CPU、内存卡片后，能看到相应的分应用实时占用排行
-- 静置运行 CPU 原则上低于 1%，不持续唤醒高耗能组件
-- 不产生管理员授权提示
-- 卸载只需退出并移除应用；偏好设置可单独清理
+- Swift, AppKit, Combine
+- macOS 13+
+- No third-party runtime dependencies / 无第三方运行时依赖
+- No network service or external backend / 无网络服务和外部后端
