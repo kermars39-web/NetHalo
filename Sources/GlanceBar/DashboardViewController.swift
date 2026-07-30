@@ -129,6 +129,7 @@ final class DashboardViewController: NSViewController {
         stack.orientation = .vertical
         stack.alignment = .leading
         stack.spacing = 12
+        stack.setCustomSpacing(6, after: networkApps)
         stack.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(stack)
 
@@ -140,7 +141,7 @@ final class DashboardViewController: NSViewController {
             header.heightAnchor.constraint(equalToConstant: 40),
             network.heightAnchor.constraint(equalToConstant: 136),
             usageRow.heightAnchor.constraint(equalToConstant: 122),
-            networkApps.heightAnchor.constraint(equalToConstant: 164),
+            networkApps.heightAnchor.constraint(equalToConstant: 154),
             footer.heightAnchor.constraint(equalToConstant: 28),
             header.widthAnchor.constraint(equalTo: stack.widthAnchor),
             network.widthAnchor.constraint(equalTo: stack.widthAnchor),
@@ -280,7 +281,7 @@ private final class NetworkCardView: GlassCardView {
         divider.boxType = .separator
         divider.translatesAutoresizingMaskIntoConstraints = false
 
-        let metrics = NSStackView(views: [download, divider, upload])
+        let metrics = NSStackView(views: [upload, divider, download])
         metrics.orientation = .horizontal
         metrics.alignment = .centerY
         metrics.spacing = 16
@@ -302,7 +303,7 @@ private final class NetworkCardView: GlassCardView {
             metrics.widthAnchor.constraint(equalTo: stack.widthAnchor),
             divider.widthAnchor.constraint(equalToConstant: 1),
             divider.heightAnchor.constraint(equalToConstant: 72),
-            download.widthAnchor.constraint(equalTo: upload.widthAnchor)
+            upload.widthAnchor.constraint(equalTo: download.widthAnchor)
         ])
     }
 
