@@ -2,18 +2,20 @@ import AppKit
 import Combine
 
 @MainActor
-final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
+final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private let model = MetricsStore()
     private let settings = SettingsStore()
-    private let popover = NSPopover()
+    private let panel = StatusPanel()
     private var statusItem: NSStatusItem?
     private weak var menuMeterView: MenuMeterView?
     private var cancellables = Set<AnyCancellable>()
+    private var localEventMonitor: Any?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
         configureStatusItem()
-        configurePopover()
+        configurePanel()
+        configureEventMonitors()
         connectUpdates()
         model.start()
 
@@ -26,6 +28,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         model.stop()
+        if let localEventMonitor { NSEvent.removeMonitor(localEventMonitor) }
     }
 
     private func configureStatusItem() {
@@ -54,16 +57,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         updateStatusMeter(model.snapshot)
     }
 
-    private func configurePopover() {
-        popover.contentSize = DashboardViewController.panelSize
-        popover.behavior = .transient
-        popover.animates = true
-        popover.delegate = self
-        popover.contentViewController = DashboardViewController(
+    private func configurePanel() {
+        panel.delegate = self
+        panel.setContentSize(DashboardViewController.windowSize)
+        panel.contentViewController = DashboardViewController(
             model: model,
             settings: settings,
             onQuit: { NSApp.terminate(nil) }
         )
+    }
+
+    private func configureEventMonitors() {
+        localEventMonitor = NSEvent.addLocalMonitorForEvents(
+            matching: [.keyDown]
+        ) { [weak self] event in
+            guard let self, self.panel.isVisible else { return event }
+
+            if event.keyCode == 53 {
+                self.closePanel()
+                return nil
+            }
+            return event
+        }
     }
 
     private func connectUpdates() {
@@ -87,21 +102,53 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     @objc
     private func handleStatusItemClick(_ sender: NSStatusBarButton) {
         if NSApp.currentEvent?.type == .rightMouseUp {
+            closePanel()
             showContextMenu(from: sender)
         } else {
-            togglePopover(from: sender)
+            togglePanel(from: sender)
         }
     }
 
-    private func togglePopover(from button: NSStatusBarButton) {
-        if popover.isShown {
-            popover.performClose(nil)
+    private func togglePanel(from button: NSStatusBarButton) {
+        if panel.isVisible {
+            closePanel()
             return
         }
 
         model.setDetailsVisible(true)
-        popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
-        popover.contentViewController?.view.window?.makeKey()
+        positionPanel(below: button)
+        panel.makeKeyAndOrderFront(nil)
+    }
+
+    private func positionPanel(below button: NSStatusBarButton) {
+        guard let buttonWindow = button.window else { return }
+        let buttonFrame = buttonWindow.convertToScreen(button.convert(button.bounds, to: nil))
+        let screenFrame = (buttonWindow.screen ?? NSScreen.main)?.visibleFrame ?? .zero
+        let size = panel.frame.size
+        let horizontalInset: CGFloat = 8
+
+        var x = buttonFrame.midX - size.width / 2
+        x = max(screenFrame.minX + horizontalInset, min(x, screenFrame.maxX - size.width - horizontalInset))
+        let y = screenFrame.maxY - size.height
+        panel.setFrameOrigin(NSPoint(x: x, y: y))
+    }
+
+    private func closePanel() {
+        guard panel.isVisible else { return }
+        panel.orderOut(nil)
+        model.setDetailsVisible(false)
+    }
+
+    func windowDidResignKey(_ notification: Notification) {
+        DispatchQueue.main.async { [weak self] in
+            guard let self, self.panel.isVisible else { return }
+            if let button = self.statusItem?.button,
+               let buttonWindow = button.window {
+                let buttonFrame = buttonWindow.convertToScreen(button.convert(button.bounds, to: nil))
+                if buttonFrame.contains(NSEvent.mouseLocation) { return }
+            }
+            self.closePanel()
+        }
     }
 
     private func showContextMenu(from button: NSStatusBarButton) {
@@ -124,7 +171,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     @objc
     private func openPopover() {
         guard let button = statusItem?.button else { return }
-        togglePopover(from: button)
+        togglePanel(from: button)
     }
 
     @objc
@@ -132,7 +179,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         NSApp.terminate(nil)
     }
 
-    func popoverDidClose(_ notification: Notification) {
-        model.setDetailsVisible(false)
+}
+
+private final class StatusPanel: NSPanel {
+    init() {
+        super.init(
+            contentRect: NSRect(origin: .zero, size: DashboardViewController.windowSize),
+            styleMask: [.borderless, .nonactivatingPanel],
+            backing: .buffered,
+            defer: false
+        )
+        level = .popUpMenu
+        isFloatingPanel = true
+        hidesOnDeactivate = false
+        isOpaque = false
+        backgroundColor = .clear
+        hasShadow = false
+        isReleasedWhenClosed = false
+        collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .transient]
     }
+
+    override var canBecomeKey: Bool { true }
+    override var canBecomeMain: Bool { false }
 }

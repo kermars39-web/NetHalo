@@ -2,6 +2,8 @@ import Combine
 import Foundation
 
 final class MetricsStore: ObservableObject {
+    static let visibleAppRefreshEverySamples = 2
+
     @Published private(set) var snapshot = MetricsSnapshot()
     @Published private(set) var cpuHistory: [Double] = []
     @Published private(set) var memoryHistory: [Double] = []
@@ -61,7 +63,7 @@ final class MetricsStore: ObservableObject {
         uploadHistory.appendKeepingLast(value.uploadBytesPerSecond, limit: 60)
 
         samplesSinceAppRefresh += 1
-        if detailsVisible, samplesSinceAppRefresh >= 5 {
+        if detailsVisible, samplesSinceAppRefresh >= Self.visibleAppRefreshEverySamples {
             refreshAppMetrics()
         }
     }

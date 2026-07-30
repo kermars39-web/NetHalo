@@ -4,6 +4,11 @@ import Combine
 @MainActor
 final class DashboardViewController: NSViewController {
     static let panelSize = NSSize(width: 342, height: 550)
+    static let shadowInsets = NSEdgeInsets(top: 0, left: 22, bottom: 30, right: 22)
+    static let windowSize = NSSize(
+        width: panelSize.width + shadowInsets.left + shadowInsets.right,
+        height: panelSize.height + shadowInsets.top + shadowInsets.bottom
+    )
 
     private let model: MetricsStore
     private let settings: SettingsStore
@@ -15,6 +20,7 @@ final class DashboardViewController: NSViewController {
     private weak var cpuCard: UsageCardView?
     private weak var memoryCard: UsageCardView?
     private weak var appUsageCard: AppUsageCardView?
+    private var contentHostView: NSView!
     private var contentView: NSView?
 
     init(model: MetricsStore, settings: SettingsStore, onQuit: @escaping () -> Void) {
@@ -29,14 +35,62 @@ final class DashboardViewController: NSViewController {
     }
 
     override func loadView() {
-        let effectView = NSVisualEffectView()
-        effectView.frame = NSRect(origin: .zero, size: Self.panelSize)
-        effectView.material = .popover
-        effectView.blendingMode = .behindWindow
-        effectView.state = .active
+        let rootFrame = NSRect(origin: .zero, size: Self.windowSize)
+        let surfaceFrame = NSRect(
+            x: Self.shadowInsets.left,
+            y: Self.shadowInsets.bottom,
+            width: Self.panelSize.width,
+            height: Self.panelSize.height
+        )
+        let rootView = PanelRootView(frame: rootFrame, interactiveFrame: surfaceFrame)
+        let shadowHost = RoundedPanelShadowView(frame: surfaceFrame)
+        rootView.addSubview(shadowHost)
 
-        view = effectView
-        preferredContentSize = Self.panelSize
+        let glassFrame = NSRect(origin: .zero, size: Self.panelSize)
+        let contentHost = NSView(frame: glassFrame)
+        contentHost.autoresizingMask = [.width, .height]
+        contentHostView = contentHost
+
+        if #available(macOS 26.0, *) {
+            let glassView = NSGlassEffectView(frame: glassFrame)
+            glassView.autoresizingMask = [.width, .height]
+            glassView.style = .regular
+            glassView.cornerRadius = 22
+            glassView.tintColor = NSColor(name: nil) { appearance in
+                let dark = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+                return dark
+                    ? NSColor.black.withAlphaComponent(0.08)
+                    : NSColor.white.withAlphaComponent(0.10)
+            }
+            glassView.wantsLayer = true
+            glassView.layer?.cornerRadius = 22
+            glassView.layer?.cornerCurve = .continuous
+            glassView.layer?.masksToBounds = true
+            glassView.contentView = contentHost
+            if #available(macOS 27.0, *) {
+                glassView.effectIsInteractive = false
+            }
+            shadowHost.addSubview(glassView)
+        } else {
+            let effectView = NSVisualEffectView(frame: glassFrame)
+            effectView.autoresizingMask = [.width, .height]
+            effectView.material = .popover
+            effectView.blendingMode = .behindWindow
+            effectView.state = .active
+            effectView.wantsLayer = true
+            effectView.layer?.cornerRadius = 22
+            effectView.layer?.cornerCurve = .continuous
+            effectView.layer?.masksToBounds = true
+            effectView.layer?.borderWidth = 0.7
+            effectView.layer?.borderColor = NSColor.separatorColor.withAlphaComponent(0.24).cgColor
+            effectView.addSubview(contentHost)
+            shadowHost.addSubview(effectView)
+        }
+        let rimView = RoundedPanelRimView(frame: glassFrame)
+        rimView.autoresizingMask = [.width, .height]
+        shadowHost.addSubview(rimView)
+        view = rootView
+        preferredContentSize = Self.windowSize
     }
 
     override func viewDidLoad() {
@@ -106,10 +160,10 @@ final class DashboardViewController: NSViewController {
     }
 
     private func install(_ newContent: NSView, animated: Bool) {
-        preferredContentSize = Self.panelSize
+        preferredContentSize = Self.windowSize
         newContent.alphaValue = animated ? 0 : 1
-        view.addSubview(newContent)
-        newContent.pinToEdges(of: view)
+        contentHostView.addSubview(newContent)
+        newContent.pinToEdges(of: contentHostView)
 
         let previous = contentView
         contentView = newContent
@@ -806,6 +860,86 @@ private final class ToggleRow: NSView {
 
 // MARK: - Drawing and shared UI
 
+private final class PanelRootView: NSView {
+    private let interactiveFrame: NSRect
+
+    init(frame frameRect: NSRect, interactiveFrame: NSRect) {
+        self.interactiveFrame = interactiveFrame
+        super.init(frame: frameRect)
+        wantsLayer = true
+        layer?.backgroundColor = NSColor.clear.cgColor
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override var isOpaque: Bool { false }
+
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        guard interactiveFrame.contains(point) else { return nil }
+        return super.hitTest(point)
+    }
+}
+
+private final class RoundedPanelShadowView: NSView {
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        wantsLayer = true
+        layer?.cornerRadius = 22
+        layer?.cornerCurve = .continuous
+        layer?.masksToBounds = false
+        layer?.shadowColor = NSColor.black.cgColor
+        layer?.shadowOpacity = 0.28
+        layer?.shadowRadius = 18
+        layer?.shadowOffset = CGSize(width: 0, height: -7)
+        updateShadowPath()
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override var isOpaque: Bool { false }
+
+    override func layout() {
+        super.layout()
+        updateShadowPath()
+    }
+
+    private func updateShadowPath() {
+        layer?.shadowPath = CGPath(
+            roundedRect: bounds,
+            cornerWidth: 22,
+            cornerHeight: 22,
+            transform: nil
+        )
+    }
+}
+
+private final class RoundedPanelRimView: NSView {
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        wantsLayer = true
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override var isOpaque: Bool { false }
+
+    override func hitTest(_ point: NSPoint) -> NSView? { nil }
+
+    override func draw(_ dirtyRect: NSRect) {
+        super.draw(dirtyRect)
+        let rect = bounds.insetBy(dx: 0.5, dy: 0.5)
+        let path = NSBezierPath(roundedRect: rect, xRadius: 21.5, yRadius: 21.5)
+        NSColor.separatorColor.withAlphaComponent(0.24).setStroke()
+        path.lineWidth = 0.6
+        path.stroke()
+    }
+
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        needsDisplay = true
+    }
+}
+
 private class SelectableGlassCardView: GlassCardView {
     var onSelect: (() -> Void)?
 
@@ -898,11 +1032,6 @@ private class GlassCardView: NSView {
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
         translatesAutoresizingMaskIntoConstraints = false
-        wantsLayer = true
-        layer?.shadowColor = NSColor.black.cgColor
-        layer?.shadowOpacity = 0.055
-        layer?.shadowRadius = 14
-        layer?.shadowOffset = CGSize(width: 0, height: -5)
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -911,11 +1040,23 @@ private class GlassCardView: NSView {
         super.draw(dirtyRect)
         let rect = bounds.insetBy(dx: 0.5, dy: 0.5)
         let path = NSBezierPath(roundedRect: rect, xRadius: 18, yRadius: 18)
-        NSColor.controlBackgroundColor.withAlphaComponent(0.62).setFill()
+        let dark = effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+        let fill = dark
+            ? NSColor.black.withAlphaComponent(0.08)
+            : NSColor.white.withAlphaComponent(0.14)
+        fill.setFill()
         path.fill()
-        NSColor.white.withAlphaComponent(0.20).setStroke()
-        path.lineWidth = 0.8
+        let border = dark
+            ? NSColor.white.withAlphaComponent(0.10)
+            : NSColor.separatorColor.withAlphaComponent(0.22)
+        border.setStroke()
+        path.lineWidth = 0.7
         path.stroke()
+    }
+
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        needsDisplay = true
     }
 }
 

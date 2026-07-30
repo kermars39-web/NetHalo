@@ -13,6 +13,11 @@ enum SelfCheck {
         expect(CPUFormatter.process(32.5) == "32%", "CPU 占用格式错误", failures: &failures)
         expect(MemoryFormatter.process(536_870_912) == "512 MB", "进程内存格式错误", failures: &failures)
         expect(DetailMetric(rawValue: "memory") == .memory, "详情类型恢复错误", failures: &failures)
+        expect(
+            MetricsStore.visibleAppRefreshEverySamples == 2,
+            "应用排行刷新周期错误",
+            failures: &failures
+        )
 
         var history: [Double] = []
         for value in 0..<65 {
