@@ -14,6 +14,8 @@ rm -rf "$APP_DIR"
 mkdir -p "$CONTENTS_DIR/MacOS" "$CONTENTS_DIR/Resources"
 cp "$BIN_DIR/NetHalo" "$CONTENTS_DIR/MacOS/NetHalo"
 cp "$PROJECT_DIR/Resources/Info.plist" "$CONTENTS_DIR/Info.plist"
+cp "$PROJECT_DIR/Resources/NetHalo.icns" "$CONTENTS_DIR/Resources/NetHalo.icns"
+cp "$PROJECT_DIR/Resources/AppIcon.png" "$CONTENTS_DIR/Resources/AppIcon.png"
 chmod 755 "$CONTENTS_DIR/MacOS/NetHalo"
 
 codesign --force --deep --sign - "$APP_DIR"

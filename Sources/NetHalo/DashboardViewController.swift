@@ -32,12 +32,8 @@ final class DashboardViewController: NSViewController {
         let effectView = NSVisualEffectView()
         effectView.frame = NSRect(origin: .zero, size: Self.panelSize)
         effectView.material = .popover
-        effectView.blendingMode = .withinWindow
+        effectView.blendingMode = .behindWindow
         effectView.state = .active
-
-        let tintView = BackdropTintView()
-        effectView.addSubview(tintView)
-        tintView.pinToEdges(of: effectView)
 
         view = effectView
         preferredContentSize = Self.panelSize
@@ -257,7 +253,7 @@ private final class HeaderView: NSView {
         super.init(frame: frameRect)
         translatesAutoresizingMaskIntoConstraints = false
 
-        let icon = SymbolBadge(symbol: "waveform.path.ecg", color: .glanceBlue)
+        let icon = AppLogoView()
         let title = makeLabel("NetHalo", size: 17, weight: .semibold, color: .labelColor)
         let subtitle = makeLabel("最近一分钟 · 每秒刷新", size: 11, weight: .medium, color: .secondaryLabelColor)
 
@@ -970,31 +966,16 @@ private final class SparklineView: NSView {
     }
 }
 
-private final class BackdropTintView: NSView {
-    override func draw(_ dirtyRect: NSRect) {
-        super.draw(dirtyRect)
-        let dark = effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
-        let start = dark ? NSColor.black.withAlphaComponent(0.10) : NSColor.white.withAlphaComponent(0.42)
-        let end = NSColor.glanceBlue.withAlphaComponent(dark ? 0.055 : 0.035)
-        NSGradient(starting: start, ending: end)?.draw(in: bounds, angle: -45)
-    }
-}
-
-private final class SymbolBadge: NSView {
-    init(symbol: String, color: NSColor) {
+private final class AppLogoView: NSView {
+    override init(frame frameRect: NSRect) {
         super.init(frame: .zero)
         translatesAutoresizingMaskIntoConstraints = false
-        wantsLayer = true
-        layer?.cornerRadius = 19
-        layer?.backgroundColor = color.withAlphaComponent(0.11).cgColor
-
-        let image = makeSymbol(symbol, size: 16, weight: .semibold, color: color)
-        addSubview(image)
-        image.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            image.centerXAnchor.constraint(equalTo: centerXAnchor),
-            image.centerYAnchor.constraint(equalTo: centerYAnchor)
-        ])
+        let image = NSApp.applicationIconImage ?? NSImage()
+        let imageView = NSImageView(image: image)
+        imageView.imageScaling = .scaleProportionallyUpOrDown
+        imageView.setAccessibilityLabel("NetHalo 图标")
+        addSubview(imageView)
+        imageView.pinToEdges(of: self)
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }

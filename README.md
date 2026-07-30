@@ -1,9 +1,15 @@
+<p align="center">
+  <img src="Resources/AppIcon.png" width="128" height="128" alt="NetHalo icon">
+</p>
+
 # NetHalo
 
 **A lightweight, privacy-first macOS menu bar monitor.**<br>
 **轻量、原生、注重隐私的 macOS 菜单栏监控工具。**
 
 [English](#english) · [简体中文](#简体中文)
+
+![NetHalo — Your Mac, at a glance.](site/public/og.png)
 
 ## English
 
@@ -25,6 +31,12 @@ NetHalo keeps the information you need one click away without turning your menu 
 - macOS 13 or later
 - Swift 5.9 or later and the Xcode Command Line Tools for building
 - Tested on Apple Silicon; Intel builds are welcome to be tested by contributors
+
+### Download
+
+Download the ready-to-use Apple Silicon disk image from [GitHub Releases](https://github.com/kermars39-web/NetHalo/releases/latest/download/NetHalo-1.0-macOS-arm64.dmg).
+
+The current build is ad-hoc signed and not notarized. On first launch, drag NetHalo to Applications, then right-click it and choose **Open**.
 
 ### Build and install
 
@@ -86,6 +98,12 @@ NetHalo 把常用状态收进一次点击里，同时避免让菜单栏变成拥
 - macOS 13 或更高版本
 - 本地构建需要 Swift 5.9 或更高版本及 Xcode Command Line Tools
 - 已在 Apple Silicon 上测试，欢迎贡献者协助验证 Intel Mac
+
+### 下载安装
+
+从 [GitHub Releases](https://github.com/kermars39-web/NetHalo/releases/latest/download/NetHalo-1.0-macOS-arm64.dmg) 下载 Apple Silicon 安装镜像。
+
+当前版本采用临时签名，尚未经过 Apple 公证。首次启动时请将 NetHalo 拖入“应用程序”，再右键应用并选择**打开**。
 
 ### 构建与安装
 
