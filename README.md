@@ -9,7 +9,7 @@
 
 [English](#english) · [简体中文](#简体中文)
 
-[Website / 产品主页](https://kermars39-web.github.io/NetHalo/) · [Download / 下载](https://github.com/kermars39-web/NetHalo/releases/latest/download/NetHalo-1.0-macOS-arm64.dmg)
+[Website / 产品主页](https://kermars39-web.github.io/NetHalo/) · [Download / 下载](https://github.com/kermars39-web/NetHalo/releases/latest/download/NetHalo-1.1-macOS-arm64.dmg) · [Changelog / 更新日志](CHANGELOG.md)
 
 ![NetHalo — Your Mac, at a glance.](site/public/og.png)
 
@@ -26,6 +26,7 @@ NetHalo keeps the information you need one click away without turning your menu 
 - Remembers the last selected ranking between launches
 - Uses real application icons and groups helper processes under their parent app
 - Native AppKit interface with no third-party dependencies
+- Manual update checks through GitHub Releases, with no background polling
 - No account, telemetry, uploads, or administrator helper
 
 ### Requirements
@@ -36,7 +37,7 @@ NetHalo keeps the information you need one click away without turning your menu 
 
 ### Download
 
-Download the ready-to-use Apple Silicon disk image from [GitHub Releases](https://github.com/kermars39-web/NetHalo/releases/latest/download/NetHalo-1.0-macOS-arm64.dmg).
+Download the ready-to-use Apple Silicon disk image from [GitHub Releases](https://github.com/kermars39-web/NetHalo/releases/latest/download/NetHalo-1.1-macOS-arm64.dmg).
 
 The current build is ad-hoc signed and not notarized. On first launch, drag NetHalo to Applications, then right-click it and choose **Open**.
 
@@ -55,7 +56,7 @@ The build script creates an ad-hoc signed app at `dist/NetHalo.app`. You can dra
 
 NetHalo reads macOS system statistics locally. Overall network, CPU, and memory metrics refresh every second while the panel is open. Per-app rankings are sampled periodically with the system `nettop` and `ps` tools. CPU usage can exceed 100% when an app uses more than one CPU core.
 
-NetHalo does not send data anywhere and does not inspect file contents.
+NetHalo does not upload monitoring or device data and does not inspect file contents. It only contacts GitHub when you explicitly click **Check for Updates** in Settings.
 
 ### Development
 
@@ -93,6 +94,7 @@ NetHalo 把常用状态收进一次点击里，同时避免让菜单栏变成拥
 - 自动记住上次选择，下次打开保持不变
 - 显示真实应用图标，并将 Helper 进程归并到主应用
 - 原生 AppKit 界面，不依赖第三方组件
+- 手动通过 GitHub Releases 检查更新，不在后台轮询
 - 无账号、无遥测、无数据上传、无管理员辅助程序
 
 ### 系统要求
@@ -103,7 +105,7 @@ NetHalo 把常用状态收进一次点击里，同时避免让菜单栏变成拥
 
 ### 下载安装
 
-从 [GitHub Releases](https://github.com/kermars39-web/NetHalo/releases/latest/download/NetHalo-1.0-macOS-arm64.dmg) 下载 Apple Silicon 安装镜像。
+从 [GitHub Releases](https://github.com/kermars39-web/NetHalo/releases/latest/download/NetHalo-1.1-macOS-arm64.dmg) 下载 Apple Silicon 安装镜像。
 
 当前版本采用临时签名，尚未经过 Apple 公证。首次启动时请将 NetHalo 拖入“应用程序”，再右键应用并选择**打开**。
 
@@ -122,7 +124,7 @@ open dist/NetHalo.app
 
 NetHalo 只在本机读取 macOS 系统统计信息。面板打开时，整体网络、CPU 和内存数据每秒刷新；分应用排行通过系统自带的 `nettop` 和 `ps` 定期采样。多核 CPU 环境下，单个应用的 CPU 占用可能超过 100%。
 
-NetHalo 不会向外发送数据，也不会读取或扫描文件内容。
+NetHalo 不会上传监控数据或设备数据，也不会读取或扫描文件内容。只有你在设置中主动点击“检查更新”时，它才会访问 GitHub。
 
 ### 开发验证
 

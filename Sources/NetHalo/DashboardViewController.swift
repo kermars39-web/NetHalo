@@ -684,7 +684,10 @@ private final class AppUsageRowView: NSView {
 private final class SettingsPanelView: NSView {
     var onBack: (() -> Void)?
     private let settings: SettingsStore
+    private let updateChecker = UpdateChecker()
     private let launchError = makeLabel("", size: 10, weight: .medium, color: .glanceOrange)
+    private let updateRow = UpdateRow()
+    private var availableReleaseURL: URL?
 
     init(settings: SettingsStore) {
         self.settings = settings
@@ -741,13 +744,16 @@ private final class SettingsPanelView: NSView {
         launchError.lineBreakMode = .byWordWrapping
         launchError.maximumNumberOfLines = 2
 
+        updateRow.onAction = { [weak self] in self?.handleUpdateAction() }
+        let updateCard = wrapInCard(updateRow, horizontalPadding: 14)
+
         let privacyTitle = makeLabel("关于数据", size: 12, weight: .semibold, color: .labelColor)
         let privacyIcon = makeSymbol("lock.shield", size: 12, weight: .semibold, color: .glanceBlue)
         let privacyHeader = NSStackView(views: [privacyIcon, privacyTitle, NSView()])
         privacyHeader.orientation = .horizontal
         privacyHeader.spacing = 7
         let privacyText = makeLabel(
-            "NetHalo 仅在本机读取系统公开统计信息，不需要管理员权限，不上传数据，也不会扫描文件内容。",
+            "运行数据始终只在本机处理。只有你主动点击“检查更新”时，NetHalo 才会访问 GitHub，不上传设备或使用数据。",
             size: 11,
             weight: .regular,
             color: .secondaryLabelColor
@@ -762,10 +768,17 @@ private final class SettingsPanelView: NSView {
         privacyStack.spacing = 8
         let privacyCard = wrapInCard(privacyStack, horizontalPadding: 16)
 
-        let about = makeLabel("NetHalo 1.0 · 原生 macOS", size: 10, weight: .medium, color: .tertiaryLabelColor)
+        let about = makeLabel(
+            "NetHalo \(currentVersion) · 原生 macOS",
+            size: 10,
+            weight: .medium,
+            color: .tertiaryLabelColor
+        )
         about.alignment = .center
 
-        let stack = NSStackView(views: [header, menuCard, launchCard, launchError, privacyCard, NSView(), about])
+        let stack = NSStackView(
+            views: [header, menuCard, launchCard, launchError, updateCard, privacyCard, NSView(), about]
+        )
         stack.orientation = .vertical
         stack.alignment = .leading
         stack.spacing = 14
@@ -781,6 +794,7 @@ private final class SettingsPanelView: NSView {
             menuCard.widthAnchor.constraint(equalTo: stack.widthAnchor),
             launchCard.widthAnchor.constraint(equalTo: stack.widthAnchor),
             launchError.widthAnchor.constraint(equalTo: stack.widthAnchor),
+            updateCard.widthAnchor.constraint(equalTo: stack.widthAnchor),
             privacyCard.widthAnchor.constraint(equalTo: stack.widthAnchor),
             about.widthAnchor.constraint(equalTo: stack.widthAnchor)
         ])
@@ -808,6 +822,117 @@ private final class SettingsPanelView: NSView {
 
     @objc private func goBack() {
         onBack?()
+    }
+
+    private var currentVersion: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.1"
+    }
+
+    private func handleUpdateAction() {
+        if let availableReleaseURL {
+            NSWorkspace.shared.open(availableReleaseURL)
+            return
+        }
+
+        updateRow.showChecking()
+        updateChecker.check(currentVersion: currentVersion) { [weak self] result in
+            DispatchQueue.main.async {
+                guard let self else { return }
+                switch result {
+                case .current(let latestVersion):
+                    self.updateRow.showCurrent(version: latestVersion)
+                case .updateAvailable(let version, let releaseURL):
+                    self.availableReleaseURL = releaseURL
+                    self.updateRow.showAvailable(version: version)
+                case .failed(let message):
+                    self.updateRow.showFailure(message)
+                }
+            }
+        }
+    }
+}
+
+private final class UpdateRow: NSView {
+    var onAction: (() -> Void)?
+
+    private let subtitleLabel = makeLabel(
+        "仅在你点击时访问 GitHub",
+        size: 10,
+        weight: .regular,
+        color: .secondaryLabelColor
+    )
+    private lazy var actionButton: NSButton = {
+        let button = NSButton(title: "检查", target: self, action: #selector(performAction))
+        button.controlSize = .small
+        button.bezelStyle = .rounded
+        button.font = .systemFont(ofSize: 10, weight: .semibold)
+        return button
+    }()
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        translatesAutoresizingMaskIntoConstraints = false
+
+        let icon = makeSymbol("arrow.triangle.2.circlepath", size: 13, weight: .semibold, color: .glanceBlue)
+        let titleLabel = makeLabel("检查更新", size: 12, weight: .semibold, color: .labelColor)
+        let labels = NSStackView(views: [titleLabel, subtitleLabel])
+        labels.orientation = .vertical
+        labels.alignment = .leading
+        labels.spacing = 2
+
+        let stack = NSStackView(views: [icon, labels, NSView(), actionButton])
+        stack.orientation = .horizontal
+        stack.alignment = .centerY
+        stack.spacing = 10
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(stack)
+
+        NSLayoutConstraint.activate([
+            heightAnchor.constraint(equalToConstant: 54),
+            stack.leadingAnchor.constraint(equalTo: leadingAnchor),
+            stack.trailingAnchor.constraint(equalTo: trailingAnchor),
+            stack.topAnchor.constraint(equalTo: topAnchor),
+            stack.bottomAnchor.constraint(equalTo: bottomAnchor),
+            icon.widthAnchor.constraint(equalToConstant: 24)
+        ])
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    func showChecking() {
+        subtitleLabel.stringValue = "正在获取最新版本…"
+        subtitleLabel.textColor = .secondaryLabelColor
+        actionButton.title = "检查中"
+        actionButton.isEnabled = false
+    }
+
+    func showCurrent(version: String) {
+        subtitleLabel.stringValue = "已是最新版本（\(displayVersion(version))）"
+        subtitleLabel.textColor = .glanceGreen
+        actionButton.title = "再检查"
+        actionButton.isEnabled = true
+    }
+
+    func showAvailable(version: String) {
+        subtitleLabel.stringValue = "发现新版本 \(displayVersion(version))"
+        subtitleLabel.textColor = .glanceBlue
+        actionButton.title = "查看"
+        actionButton.isEnabled = true
+    }
+
+    func showFailure(_ message: String) {
+        subtitleLabel.stringValue = message
+        subtitleLabel.textColor = .glanceOrange
+        actionButton.title = "重试"
+        actionButton.isEnabled = true
+    }
+
+    @objc private func performAction() {
+        onAction?()
+    }
+
+    private func displayVersion(_ version: String) -> String {
+        version.trimmingCharacters(in: CharacterSet(charactersIn: "vV"))
     }
 }
 

@@ -1,6 +1,6 @@
 # NetHalo Project Scope / 项目范围
 
-Current version / 当前版本：**1.0**
+Current version / 当前版本：**1.1**
 
 ## Goals / 目标
 
@@ -15,7 +15,8 @@ NetHalo 是一款原生 macOS 菜单栏工具，以紧凑、低干扰的方式�
 - Switchable per-app rankings for network, CPU, and memory / 可切换的网络、CPU、内存分应用排行
 - Persistent selection between launches / 记住上次选择
 - Native launch-at-login support / 使用系统原生开机启动能力
-- Local-only processing with no telemetry or uploads / 完全本地处理，不含遥测和数据上传
+- User-initiated update checks through GitHub Releases / 用户主动触发的 GitHub Release 版本检查
+- Local-only monitoring with no telemetry or uploads / 监控数据完全本地处理，不含遥测和数据上传
 
 ## Non-goals for 1.x / 1.x 暂不包含
 
@@ -28,4 +29,4 @@ Temperature, GPU power, fan control, and private SMC access are intentionally ex
 - Swift, AppKit, Combine
 - macOS 13+
 - No third-party runtime dependencies / 无第三方运行时依赖
-- No network service or external backend / 无网络服务和外部后端
+- No background network activity or external backend; update checks only run after a user click / 无后台联网和外部后端，只在用户点击后检查更新

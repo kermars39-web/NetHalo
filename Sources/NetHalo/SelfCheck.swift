@@ -13,6 +13,28 @@ enum SelfCheck {
         expect(CPUFormatter.process(32.5) == "32%", "CPU 占用格式错误", failures: &failures)
         expect(MemoryFormatter.process(536_870_912) == "512 MB", "进程内存格式错误", failures: &failures)
         expect(DetailMetric(rawValue: "memory") == .memory, "详情类型恢复错误", failures: &failures)
+        expect(AppVersion("v1.0") == AppVersion("1.0.0"), "版本号补零比较错误", failures: &failures)
+        expect(AppVersion("1.0.1")! > AppVersion("1.0")!, "新版本比较错误", failures: &failures)
+        expect(AppVersion("2.0")! > AppVersion("1.99.99")!, "主版本比较错误", failures: &failures)
+        expect(AppVersion("not-a-version") == nil, "非法版本号未拒绝", failures: &failures)
+        let releaseFixture = URL(string: "https://github.com/kermars39-web/NetHalo/releases/tag/v1.1")!
+        switch UpdateChecker.evaluateRelease(url: releaseFixture, currentVersion: "1.0") {
+        case .updateAvailable(let version, let releaseURL):
+            expect(version == "v1.1", "新版本号解析错误", failures: &failures)
+            expect(
+                releaseURL.absoluteString == "https://github.com/kermars39-web/NetHalo/releases/tag/v1.1",
+                "更新地址解析错误",
+                failures: &failures
+            )
+        default:
+            failures.append("未识别到可用更新")
+        }
+        switch UpdateChecker.evaluateRelease(url: releaseFixture, currentVersion: "1.1.0") {
+        case .current(let latestVersion):
+            expect(latestVersion == "v1.1", "最新版本号解析错误", failures: &failures)
+        default:
+            failures.append("当前版本被误判为需要更新")
+        }
         expect(
             MetricsStore.visibleAppRefreshEverySamples == 2,
             "应用排行刷新周期错误",

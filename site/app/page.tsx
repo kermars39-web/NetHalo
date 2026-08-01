@@ -12,7 +12,7 @@ const copy = {
     title: "状态，一眼就够了。",
     intro:
       "NetHalo 把实时网速留在菜单栏，把 CPU、内存和分应用占用收进一次点击里。简洁、原生，不打扰。",
-    download: "下载 NetHalo 1.0",
+    download: "下载 NetHalo 1.1",
     downloadMeta: "Apple Silicon · macOS 13+",
     source: "查看源代码",
     firstOpen: "当前版本为临时签名，首次启动请右键应用并选择“打开”。",
@@ -34,16 +34,16 @@ const copy = {
       {
         index: "03",
         title: "数据不离开你的 Mac",
-        text: "无账号、无遥测、无上传、无管理员辅助程序，也不会扫描文件内容。",
+        text: "无账号、无遥测、无上传。只有你主动检查更新时，才会访问 GitHub。",
       },
     ],
     detailTitle: "需要细节时，再点一下。",
     detailText:
       "点击网络、CPU 或内存卡片，下方立即切换对应的应用排行。NetHalo 会记住你的选择，下次打开仍停留在这里。",
-    detailItems: ["最近一分钟趋势", "真实应用图标", "分应用实时排行", "记住上次选择"],
+    detailItems: ["最近一分钟趋势", "真实应用图标", "分应用实时排行", "手动检查更新"],
     ctaTitle: "让菜单栏重新安静下来。",
     ctaText: "免费下载、MIT 开源。你可以直接使用，也可以一起把它做得更好。",
-    ctaButton: "下载 1.0",
+    ctaButton: "下载 1.1",
     footer: "Native macOS. Zero telemetry. Built for calm.",
   },
   en: {
@@ -54,7 +54,7 @@ const copy = {
     title: "Your Mac, at a glance.",
     intro:
       "NetHalo keeps live network speed in the menu bar and puts CPU, memory, and per-app usage one click away. Native, focused, and quiet.",
-    download: "Download NetHalo 1.0",
+    download: "Download NetHalo 1.1",
     downloadMeta: "Apple Silicon · macOS 13+",
     source: "View source",
     firstOpen: "This build is ad-hoc signed. Right-click the app and choose Open on first launch.",
@@ -76,22 +76,22 @@ const copy = {
       {
         index: "03",
         title: "Your data stays on your Mac",
-        text: "No account, telemetry, uploads, privileged helper, or file-content scanning.",
+        text: "No account, telemetry, or uploads. NetHalo only contacts GitHub when you check for updates.",
       },
     ],
     detailTitle: "Details when you want them.",
     detailText:
       "Click Network, CPU, or Memory and the per-app ranking switches instantly. NetHalo remembers your choice for the next launch.",
-    detailItems: ["One-minute trends", "Real app icons", "Per-app rankings", "Persistent selection"],
+    detailItems: ["One-minute trends", "Real app icons", "Per-app rankings", "Manual update checks"],
     ctaTitle: "Make your menu bar quiet again.",
     ctaText: "Free to download and open source under MIT. Use it as-is or help make it better.",
-    ctaButton: "Download 1.0",
+    ctaButton: "Download 1.1",
     footer: "Native macOS. Zero telemetry. Built for calm.",
   },
 } as const;
 
 const downloadUrl =
-  "https://github.com/kermars39-web/NetHalo/releases/latest/download/NetHalo-1.0-macOS-arm64.dmg";
+  "https://github.com/kermars39-web/NetHalo/releases/latest/download/NetHalo-1.1-macOS-arm64.dmg";
 const githubUrl = "https://github.com/kermars39-web/NetHalo";
 const assetBase = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
@@ -223,7 +223,7 @@ export default function Home() {
               </div>
 
               <div className="mock-footer">
-                <span>Local only</span>
+                <span>Local monitoring</span>
                 <span>Settings&nbsp;&nbsp;⏻</span>
               </div>
             </div>
