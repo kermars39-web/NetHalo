@@ -32,7 +32,7 @@ test("server-renders the NetHalo product page", async () => {
   assert.match(html, /<title>NetHalo — A quieter macOS menu bar monitor<\/title>/i);
   assert.match(html, /状态，一眼就够了。/);
   assert.match(html, /下载 NetHalo 1\.1/);
-  assert.match(html, /NetHalo-1\.1-macOS-arm64\.dmg/);
+  assert.match(html, /NetHalo-macOS-arm64\.dmg/);
   assert.match(html, /github\.com\/kermars39-web\/NetHalo/);
   assert.doesNotMatch(html, /boost(?:net)?/i);
 });

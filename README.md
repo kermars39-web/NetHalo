@@ -1,148 +1,98 @@
 <p align="center">
-  <img src="Resources/AppIcon.png" width="128" height="128" alt="NetHalo icon">
+  <img src="Resources/AppIcon.png" width="112" height="112" alt="NetHalo app icon">
 </p>
 
-# NetHalo
+<h1 align="center">NetHalo</h1>
 
-**A lightweight, privacy-first macOS menu bar monitor.**<br>
-**轻量、原生、注重隐私的 macOS 菜单栏监控工具。**
+<p align="center"><strong>Network speed, CPU, and memory — at a glance.</strong></p>
 
-[English](#english) · [简体中文](#简体中文)
+<p align="center">
+  A lightweight native macOS menu bar monitor with a fixed-width meter,<br>
+  no account, no telemetry, and no administrator helper.
+</p>
 
-[Website / 产品主页](https://kermars39-web.github.io/NetHalo/) · [Download / 下载](https://github.com/kermars39-web/NetHalo/releases/latest/download/NetHalo-1.1-macOS-arm64.dmg) · [Changelog / 更新日志](CHANGELOG.md)
+<p align="center">
+  <a href="https://github.com/kermars39-web/NetHalo/releases/latest/download/NetHalo-macOS-arm64.dmg"><img src="https://img.shields.io/badge/Download_for_Apple_Silicon-007AFF?style=for-the-badge&logo=apple&logoColor=white" alt="Download NetHalo for Apple Silicon"></a>
+  <a href="https://kermars39-web.github.io/NetHalo/"><img src="https://img.shields.io/badge/Visit_Website-111827?style=for-the-badge" alt="Visit the NetHalo website"></a>
+</p>
 
-![NetHalo — Your Mac, at a glance.](site/public/og.png)
+<p align="center"><sub>macOS 13+ · Apple Silicon · MIT License</sub></p>
 
-## English
+<p align="center">
+  <img src="promo/nethalo-demo.gif" width="960" alt="NetHalo showing live menu bar network speed and switchable per-app CPU, memory, and network rankings">
+</p>
 
-NetHalo keeps the information you need one click away without turning your menu bar into a dashboard. It shows real-time upload and download speed in a compact, fixed-width meter, with CPU, memory, and per-app usage available in the popover.
+<p align="center">
+  <a href="#why-nethalo">Why NetHalo</a> ·
+  <a href="#quick-start">Quick start</a> ·
+  <a href="#privacy">Privacy</a> ·
+  <a href="#简体中文">简体中文</a>
+</p>
 
-### Highlights
+## Why NetHalo
 
-- Compact two-line menu bar meter: upload on top, download below
-- Fixed-width values that do not shift as network speed changes
-- One-minute network, CPU, and memory trends
-- Click the Network, CPU, or Memory card to switch the per-app ranking
-- Remembers the last selected ranking between launches
-- Uses real application icons and groups helper processes under their parent app
-- Native AppKit interface with no third-party dependencies
-- Manual update checks through GitHub Releases, with no background polling
-- No account, telemetry, uploads, or administrator helper
+- **A menu bar that stays readable.** Upload sits above download in a compact, fixed-width meter, so changing values do not shift the layout.
+- **Details only when you ask.** One click reveals one-minute network, CPU, and memory trends plus switchable per-app rankings.
+- **Real apps, not process noise.** NetHalo shows application icons and groups common helper processes under their parent app.
+- **Native and quiet.** The interface is built with AppKit, has no third-party runtime dependencies, and avoids decorative motion in a high-frequency utility.
 
-### Requirements
+## Quick start
 
-- macOS 13 or later
-- Swift 5.9 or later and the Xcode Command Line Tools for building
-- Tested on Apple Silicon; Intel builds are welcome to be tested by contributors
+1. [Download the latest Apple Silicon DMG](https://github.com/kermars39-web/NetHalo/releases/latest/download/NetHalo-macOS-arm64.dmg).
+2. Open the disk image and drag **NetHalo** into **Applications**.
+3. On first launch, right-click NetHalo and choose **Open**.
 
-### Download
+The current build is ad-hoc signed and not notarized, which is why macOS requires the right-click step the first time. You can verify the download against the published [SHA-256 checksums](https://github.com/kermars39-web/NetHalo/releases/latest/download/SHA256SUMS.txt) or build the app from source below.
 
-Download the ready-to-use Apple Silicon disk image from [GitHub Releases](https://github.com/kermars39-web/NetHalo/releases/latest/download/NetHalo-1.1-macOS-arm64.dmg).
+## Focused by design
 
-The current build is ad-hoc signed and not notarized. On first launch, drag NetHalo to Applications, then right-click it and choose **Open**.
+NetHalo is for people who want the three essentials without turning the menu bar into a full hardware dashboard.
 
-### Build and install
+| NetHalo keeps close | NetHalo intentionally leaves out |
+| --- | --- |
+| Live upload and download speed | Temperature and private SMC access |
+| CPU and memory trends | GPU power and fan control |
+| Per-app network, CPU, and memory rankings | Privileged background helpers |
+| User-initiated update checks | Accounts, telemetry, and automatic update polling |
+
+## Privacy
+
+NetHalo reads macOS system statistics locally. Overall network, CPU, and memory values refresh every second while the panel is open; per-app rankings use the system `nettop` and `ps` tools.
+
+It does not upload monitoring or device data, inspect file contents, create an account, or install an administrator helper. NetHalo only contacts GitHub after you explicitly choose **Check for Updates** in Settings.
+
+## Build from source
+
+Building requires Swift 5.9 or later and the Xcode Command Line Tools.
 
 ```bash
 git clone https://github.com/kermars39-web/NetHalo.git
 cd NetHalo
 ./Scripts/build-app.sh
+.build/release/NetHalo --self-test
 open dist/NetHalo.app
 ```
 
-The build script creates an ad-hoc signed app at `dist/NetHalo.app`. You can drag it into `/Applications` after testing it.
+The build script creates an ad-hoc signed app at `dist/NetHalo.app`.
 
-### How it works
+## Contributing
 
-NetHalo reads macOS system statistics locally. Overall network, CPU, and memory metrics refresh every second while the panel is open. Per-app rankings are sampled periodically with the system `nettop` and `ps` tools. CPU usage can exceed 100% when an app uses more than one CPU core.
+Issues and pull requests are welcome. Please keep the interface compact, native, and calm; clarity should take priority over decorative animation.
 
-NetHalo does not upload monitoring or device data and does not inspect file contents. It only contacts GitHub when you explicitly click **Check for Updates** in Settings.
-
-### Development
-
-```bash
-swift build --disable-sandbox -c release
-.build/release/NetHalo --self-test
-```
-
-Issues and pull requests are welcome. Please keep the interface compact, native, and quiet: high-frequency interactions should prioritize clarity over decorative animation.
-
-### Uninstall
-
-Quit NetHalo and remove `NetHalo.app`. To also clear its preferences, remove:
-
-```text
-~/Library/Preferences/com.kermars.nethalo.plist
-```
-
-### License
-
-NetHalo is available under the [MIT License](LICENSE).
-
----
+If NetHalo earns a place in your menu bar, [starring the repository](https://github.com/kermars39-web/NetHalo) helps more Mac users find it.
 
 ## 简体中文
 
-NetHalo 把常用状态收进一次点击里，同时避免让菜单栏变成拥挤的仪表盘。菜单栏以紧凑、固定宽度的双行形式显示实时上传与下载速度；CPU、内存和分应用占用则在弹出面板中查看。
+NetHalo 是一款轻量、原生的 macOS 菜单栏监控工具：用固定宽度双行显示实时上传和下载速度，点击后查看 CPU、内存、最近一分钟趋势及分应用排行。
 
-### 主要特点
-
-- 菜单栏双行显示：上传在上、下载在下
-- 固定宽度，网速数字变化时不会左右晃动
-- 展示最近一分钟的网络、CPU 和内存趋势
-- 点击网络、CPU 或内存卡片，切换对应的分应用排行
-- 自动记住上次选择，下次打开保持不变
-- 显示真实应用图标，并将 Helper 进程归并到主应用
-- 原生 AppKit 界面，不依赖第三方组件
-- 手动通过 GitHub Releases 检查更新，不在后台轮询
+- 原生 AppKit，不使用第三方运行时依赖
 - 无账号、无遥测、无数据上传、无管理员辅助程序
+- 数字变化时菜单栏宽度不抖动
+- 显示真实应用图标，并归并常见 Helper 进程
+- 只在用户主动检查更新时访问 GitHub
 
-### 系统要求
+下载安装：[Apple Silicon DMG](https://github.com/kermars39-web/NetHalo/releases/latest/download/NetHalo-macOS-arm64.dmg)。支持 macOS 13 及以上版本。当前版本采用临时签名，首次启动请将 NetHalo 拖入“应用程序”，再右键选择**打开**。
 
-- macOS 13 或更高版本
-- 本地构建需要 Swift 5.9 或更高版本及 Xcode Command Line Tools
-- 已在 Apple Silicon 上测试，欢迎贡献者协助验证 Intel Mac
+## License
 
-### 下载安装
-
-从 [GitHub Releases](https://github.com/kermars39-web/NetHalo/releases/latest/download/NetHalo-1.1-macOS-arm64.dmg) 下载 Apple Silicon 安装镜像。
-
-当前版本采用临时签名，尚未经过 Apple 公证。首次启动时请将 NetHalo 拖入“应用程序”，再右键应用并选择**打开**。
-
-### 构建与安装
-
-```bash
-git clone https://github.com/kermars39-web/NetHalo.git
-cd NetHalo
-./Scripts/build-app.sh
-open dist/NetHalo.app
-```
-
-构建脚本会在 `dist/NetHalo.app` 生成临时签名的应用。试用确认后，可将它拖入 `/Applications`。
-
-### 工作方式与隐私
-
-NetHalo 只在本机读取 macOS 系统统计信息。面板打开时，整体网络、CPU 和内存数据每秒刷新；分应用排行通过系统自带的 `nettop` 和 `ps` 定期采样。多核 CPU 环境下，单个应用的 CPU 占用可能超过 100%。
-
-NetHalo 不会上传监控数据或设备数据，也不会读取或扫描文件内容。只有你在设置中主动点击“检查更新”时，它才会访问 GitHub。
-
-### 开发验证
-
-```bash
-swift build --disable-sandbox -c release
-.build/release/NetHalo --self-test
-```
-
-欢迎提交 Issue 和 Pull Request。请保持界面紧凑、原生、克制；对于高频操作，清晰反馈应优先于装饰性动画。
-
-### 卸载
-
-退出 NetHalo 后移除 `NetHalo.app`。如需同时清理偏好设置，再移除：
-
-```text
-~/Library/Preferences/com.kermars.nethalo.plist
-```
-
-### 开源许可
-
-NetHalo 使用 [MIT License](LICENSE) 开源。
+NetHalo is available under the [MIT License](LICENSE). See the [changelog](CHANGELOG.md) for release history.

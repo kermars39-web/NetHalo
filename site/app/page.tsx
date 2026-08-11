@@ -91,7 +91,7 @@ const copy = {
 } as const;
 
 const downloadUrl =
-  "https://github.com/kermars39-web/NetHalo/releases/latest/download/NetHalo-1.1-macOS-arm64.dmg";
+  "https://github.com/kermars39-web/NetHalo/releases/latest/download/NetHalo-macOS-arm64.dmg";
 const githubUrl = "https://github.com/kermars39-web/NetHalo";
 const assetBase = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
