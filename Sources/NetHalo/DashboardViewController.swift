@@ -493,9 +493,9 @@ private final class AppUsageCardView: NSView {
                         name: app.name,
                         iconPath: app.iconPath,
                         primaryText: "↑ \(RateFormatter.menu(app.uploadBytesPerSecond))/s",
-                        primaryColor: .labelColor,
+                        primaryColor: .secondaryLabelColor,
                         secondaryText: "↓ \(RateFormatter.menu(app.downloadBytesPerSecond))/s",
-                        secondaryColor: .secondaryLabelColor
+                        secondaryColor: .labelColor
                     )
                 )
             }
