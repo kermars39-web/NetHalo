@@ -10,6 +10,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private weak var menuMeterView: MenuMeterView?
     private var cancellables = Set<AnyCancellable>()
     private var localEventMonitor: Any?
+    private var globalMouseMonitor: Any?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
@@ -21,6 +22,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
         if CommandLine.arguments.contains("--show-panel") {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+                NSApp.activate(ignoringOtherApps: true)
                 self?.openPopover()
             }
         }
@@ -29,6 +31,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     func applicationWillTerminate(_ notification: Notification) {
         model.stop()
         if let localEventMonitor { NSEvent.removeMonitor(localEventMonitor) }
+        if let globalMouseMonitor { NSEvent.removeMonitor(globalMouseMonitor) }
     }
 
     private func configureStatusItem() {
@@ -78,6 +81,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
                 return nil
             }
             return event
+        }
+
+        globalMouseMonitor = NSEvent.addGlobalMonitorForEvents(
+            matching: [.leftMouseDown, .rightMouseDown]
+        ) { [weak self] _ in
+            DispatchQueue.main.async { [weak self] in
+                self?.closePanelAfterOutsideClick()
+            }
         }
     }
 
@@ -139,16 +150,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         model.setDetailsVisible(false)
     }
 
-    func windowDidResignKey(_ notification: Notification) {
-        DispatchQueue.main.async { [weak self] in
-            guard let self, self.panel.isVisible else { return }
-            if let button = self.statusItem?.button,
-               let buttonWindow = button.window {
-                let buttonFrame = buttonWindow.convertToScreen(button.convert(button.bounds, to: nil))
-                if buttonFrame.contains(NSEvent.mouseLocation) { return }
-            }
-            self.closePanel()
+    private func closePanelAfterOutsideClick() {
+        guard panel.isVisible else { return }
+        let mouseLocation = NSEvent.mouseLocation
+        if panel.frame.contains(mouseLocation) { return }
+
+        if let button = statusItem?.button,
+           let buttonWindow = button.window {
+            let buttonFrame = buttonWindow.convertToScreen(button.convert(button.bounds, to: nil))
+            if buttonFrame.contains(mouseLocation) { return }
         }
+
+        closePanel()
     }
 
     private func showContextMenu(from button: NSStatusBarButton) {

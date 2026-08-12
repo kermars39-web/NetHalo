@@ -8,6 +8,10 @@ enum NetHaloMain {
             exit(SelfCheck.run())
         }
 
+        if CommandLine.arguments.contains("--render-preview") {
+            exit(PreviewRenderer.run())
+        }
+
         let application = NSApplication.shared
         let delegate = AppDelegate()
 

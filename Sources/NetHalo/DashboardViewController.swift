@@ -3,8 +3,8 @@ import Combine
 
 @MainActor
 final class DashboardViewController: NSViewController {
-    static let panelSize = NSSize(width: 342, height: 550)
-    static let shadowInsets = NSEdgeInsets(top: 0, left: 22, bottom: 30, right: 22)
+    static let panelSize = NSSize(width: 342, height: 471)
+    static let shadowInsets = NSEdgeInsets(top: 0, left: 20, bottom: 24, right: 20)
     static let windowSize = NSSize(
         width: panelSize.width + shadowInsets.left + shadowInsets.right,
         height: panelSize.height + shadowInsets.top + shadowInsets.bottom
@@ -15,7 +15,6 @@ final class DashboardViewController: NSViewController {
     private let onQuit: () -> Void
     private var cancellables = Set<AnyCancellable>()
 
-    private weak var headerView: HeaderView?
     private weak var networkCard: NetworkCardView?
     private weak var cpuCard: UsageCardView?
     private weak var memoryCard: UsageCardView?
@@ -55,15 +54,9 @@ final class DashboardViewController: NSViewController {
             let glassView = NSGlassEffectView(frame: glassFrame)
             glassView.autoresizingMask = [.width, .height]
             glassView.style = .regular
-            glassView.cornerRadius = 22
-            glassView.tintColor = NSColor(name: nil) { appearance in
-                let dark = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
-                return dark
-                    ? NSColor.black.withAlphaComponent(0.08)
-                    : NSColor.white.withAlphaComponent(0.10)
-            }
+            glassView.cornerRadius = 20
             glassView.wantsLayer = true
-            glassView.layer?.cornerRadius = 22
+            glassView.layer?.cornerRadius = 20
             glassView.layer?.cornerCurve = .continuous
             glassView.layer?.masksToBounds = true
             glassView.contentView = contentHost
@@ -78,11 +71,9 @@ final class DashboardViewController: NSViewController {
             effectView.blendingMode = .behindWindow
             effectView.state = .active
             effectView.wantsLayer = true
-            effectView.layer?.cornerRadius = 22
+            effectView.layer?.cornerRadius = 20
             effectView.layer?.cornerCurve = .continuous
             effectView.layer?.masksToBounds = true
-            effectView.layer?.borderWidth = 0.7
-            effectView.layer?.borderColor = NSColor.separatorColor.withAlphaComponent(0.24).cgColor
             effectView.addSubview(contentHost)
             shadowHost.addSubview(effectView)
         }
@@ -128,7 +119,6 @@ final class DashboardViewController: NSViewController {
 
     private func refreshDashboard() {
         let snapshot = model.snapshot
-        headerView?.update(health: snapshot.health)
         networkCard?.update(
             snapshot: snapshot,
             downloadHistory: model.downloadHistory,
@@ -136,12 +126,12 @@ final class DashboardViewController: NSViewController {
         )
         cpuCard?.update(
             value: "\(Int(snapshot.cpuPercent.rounded()))%",
-            subtitle: "即时负载",
+            caption: "即时负载",
             history: model.cpuHistory
         )
         memoryCard?.update(
             value: "\(Int(snapshot.memoryPercent.rounded()))%",
-            subtitle: "\(MemoryFormatter.gigabytes(snapshot.memoryUsedBytes)) 已用",
+            caption: "\(MemoryFormatter.gigabytes(snapshot.memoryUsedBytes)) 已用",
             history: model.memoryHistory
         )
     }
@@ -187,7 +177,6 @@ final class DashboardViewController: NSViewController {
         let container = NSView()
         container.translatesAutoresizingMaskIntoConstraints = false
 
-        let header = HeaderView()
         let network = NetworkCardView()
         let cpu = UsageCardView(title: "CPU", accent: .glanceBlue)
         let memory = UsageCardView(title: "内存", accent: .glanceViolet)
@@ -198,7 +187,6 @@ final class DashboardViewController: NSViewController {
         cpu.onSelect = { [weak settings] in settings?.selectDetailMetric(.cpu) }
         memory.onSelect = { [weak settings] in settings?.selectDetailMetric(.memory) }
 
-        headerView = header
         networkCard = network
         cpuCard = cpu
         memoryCard = memory
@@ -206,32 +194,40 @@ final class DashboardViewController: NSViewController {
 
         let usageRow = NSStackView(views: [cpu, memory])
         usageRow.orientation = .horizontal
-        usageRow.spacing = 12
+        usageRow.spacing = 10
         usageRow.distribution = .fillEqually
+        usageRow.translatesAutoresizingMaskIntoConstraints = false
 
-        let stack = NSStackView(views: [header, network, usageRow, appUsage, footer])
+        let separator1 = makeSectionSeparator()
+        let separator2 = makeSectionSeparator()
+
+        let stack = NSStackView(views: [network, usageRow, separator1, appUsage, separator2, footer])
         stack.orientation = .vertical
         stack.alignment = .leading
-        stack.spacing = 12
-        stack.setCustomSpacing(6, after: appUsage)
+        stack.spacing = 0
+        stack.setCustomSpacing(10, after: network)
+        stack.setCustomSpacing(10, after: usageRow)
+        stack.setCustomSpacing(10, after: separator1)
+        stack.setCustomSpacing(8, after: appUsage)
+        stack.setCustomSpacing(4, after: separator2)
         stack.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(stack)
 
         NSLayoutConstraint.activate([
             stack.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 16),
             stack.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -16),
-            stack.topAnchor.constraint(equalTo: container.topAnchor, constant: 16),
-            stack.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -12),
-            header.heightAnchor.constraint(equalToConstant: 40),
-            network.heightAnchor.constraint(equalToConstant: 136),
-            usageRow.heightAnchor.constraint(equalToConstant: 122),
-            appUsage.heightAnchor.constraint(equalToConstant: 154),
+            stack.topAnchor.constraint(equalTo: container.topAnchor, constant: 24),
+            stack.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -8),
+            network.heightAnchor.constraint(equalToConstant: 100),
+            usageRow.heightAnchor.constraint(equalToConstant: 116),
+            appUsage.heightAnchor.constraint(equalToConstant: 151),
             footer.heightAnchor.constraint(equalToConstant: 28),
-            header.widthAnchor.constraint(equalTo: stack.widthAnchor),
             network.widthAnchor.constraint(equalTo: stack.widthAnchor),
             usageRow.widthAnchor.constraint(equalTo: stack.widthAnchor),
             appUsage.widthAnchor.constraint(equalTo: stack.widthAnchor),
-            footer.widthAnchor.constraint(equalTo: stack.widthAnchor)
+            footer.widthAnchor.constraint(equalTo: stack.widthAnchor),
+            separator1.widthAnchor.constraint(equalTo: stack.widthAnchor),
+            separator2.widthAnchor.constraint(equalTo: stack.widthAnchor)
         ])
 
         install(container, animated: animated)
@@ -247,43 +243,22 @@ final class DashboardViewController: NSViewController {
 
     private func makeFooter() -> NSView {
         let container = NSView()
-        let privacyLabel = makeLabel(
-            "仅在本机读取",
-            size: 10,
-            weight: .medium,
-            color: .tertiaryLabelColor
-        )
-
         let settingsButton = makePlainButton(
-            title: "设置",
-            symbol: "slider.horizontal.3",
+            title: "监控设置…",
+            symbol: "gearshape",
             target: self,
             action: #selector(openSettings)
         )
         settingsButton.toolTip = "设置菜单栏显示内容"
-
-        let quitButton = makePlainButton(
-            title: "",
-            symbol: "power",
-            target: self,
-            action: #selector(quit)
-        )
-        quitButton.toolTip = "退出 NetHalo"
-
-        let buttons = NSStackView(views: [settingsButton, quitButton])
-        buttons.orientation = .horizontal
-        buttons.spacing = 6
-        buttons.translatesAutoresizingMaskIntoConstraints = false
-
-        container.addSubview(privacyLabel)
-        container.addSubview(buttons)
-        privacyLabel.translatesAutoresizingMaskIntoConstraints = false
+        settingsButton.font = .systemFont(ofSize: 12, weight: .regular)
+        settingsButton.alignment = .left
+        settingsButton.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(settingsButton)
 
         NSLayoutConstraint.activate([
-            privacyLabel.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-            privacyLabel.centerYAnchor.constraint(equalTo: container.centerYAnchor),
-            buttons.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-            buttons.centerYAnchor.constraint(equalTo: container.centerYAnchor)
+            settingsButton.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            settingsButton.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            settingsButton.centerYAnchor.constraint(equalTo: container.centerYAnchor)
         ])
 
         return container
@@ -293,101 +268,34 @@ final class DashboardViewController: NSViewController {
         showSettings(animated: true)
     }
 
-    @objc private func quit() {
-        onQuit()
-    }
 }
 
 // MARK: - Dashboard components
 
-private final class HeaderView: NSView {
-    private let healthLabel = PillLabel()
-
-    override init(frame frameRect: NSRect) {
-        super.init(frame: frameRect)
-        translatesAutoresizingMaskIntoConstraints = false
-
-        let icon = AppLogoView()
-        let title = makeLabel("NetHalo", size: 17, weight: .semibold, color: .labelColor)
-        let subtitle = makeLabel("最近一分钟 · 每秒刷新", size: 11, weight: .medium, color: .secondaryLabelColor)
-
-        let titleStack = NSStackView(views: [title, subtitle])
-        titleStack.orientation = .vertical
-        titleStack.alignment = .leading
-        titleStack.spacing = 2
-
-        let stack = NSStackView(views: [icon, titleStack, NSView(), healthLabel])
-        stack.orientation = .horizontal
-        stack.alignment = .centerY
-        stack.spacing = 12
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(stack)
-
-        NSLayoutConstraint.activate([
-            stack.leadingAnchor.constraint(equalTo: leadingAnchor),
-            stack.trailingAnchor.constraint(equalTo: trailingAnchor),
-            stack.topAnchor.constraint(equalTo: topAnchor),
-            stack.bottomAnchor.constraint(equalTo: bottomAnchor),
-            icon.widthAnchor.constraint(equalToConstant: 38),
-            icon.heightAnchor.constraint(equalToConstant: 38)
-        ])
-
-        update(health: .calm)
-    }
-
-    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
-
-    func update(health: SystemHealth) {
-        let color: NSColor
-        switch health {
-        case .calm: color = .glanceGreen
-        case .working: color = .glanceOrange
-        case .busy: color = .systemRed
-        }
-        healthLabel.update(text: health.title, color: color)
-    }
-}
-
-private final class NetworkCardView: SelectableGlassCardView {
-    private let download = NetworkMetricView(title: "下载", symbol: "arrow.down", accent: .glanceCyan)
-    private let upload = NetworkMetricView(title: "上传", symbol: "arrow.up", accent: .glanceBlue)
+private final class NetworkCardView: SelectableCardView {
+    private let upload = NetworkMetricColumn(title: "上传", symbol: "arrow.up", accent: .glanceBlue)
+    private let download = NetworkMetricColumn(title: "下载", symbol: "arrow.down", accent: .glanceCyan)
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
         configureSelection(accent: .glanceBlue, accessibilityLabel: "网络占用应用")
 
-        let title = makeLabel("网络流动", size: 12, weight: .semibold, color: .secondaryLabelColor)
-        let symbol = makeSymbol("arrow.up.arrow.down", size: 11, weight: .semibold, color: .tertiaryLabelColor)
-        let header = NSStackView(views: [title, NSView(), symbol])
-        header.orientation = .horizontal
-        header.alignment = .centerY
-
-        let divider = NSBox()
-        divider.boxType = .separator
-        divider.translatesAutoresizingMaskIntoConstraints = false
-
-        let metrics = NSStackView(views: [upload, divider, download])
-        metrics.orientation = .horizontal
-        metrics.alignment = .centerY
-        metrics.spacing = 16
-        metrics.distribution = .fill
-
-        let stack = NSStackView(views: [header, metrics])
-        stack.orientation = .vertical
-        stack.alignment = .leading
-        stack.spacing = 10
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(stack)
+        let divider = makeSectionSeparator(vertical: true)
+        let columns = NSStackView(views: [upload, divider, download])
+        columns.orientation = .horizontal
+        columns.alignment = .centerY
+        columns.distribution = .fill
+        columns.spacing = 12
+        columns.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(columns)
 
         NSLayoutConstraint.activate([
-            stack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
-            stack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
-            stack.topAnchor.constraint(equalTo: topAnchor, constant: 14),
-            stack.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -14),
-            header.widthAnchor.constraint(equalTo: stack.widthAnchor),
-            metrics.widthAnchor.constraint(equalTo: stack.widthAnchor),
+            columns.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 14),
+            columns.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -14),
+            columns.topAnchor.constraint(equalTo: topAnchor, constant: 12),
+            columns.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -12),
             divider.widthAnchor.constraint(equalToConstant: 1),
-            divider.heightAnchor.constraint(equalToConstant: 72),
+            divider.heightAnchor.constraint(equalToConstant: 64),
             upload.widthAnchor.constraint(equalTo: download.widthAnchor)
         ])
     }
@@ -395,36 +303,37 @@ private final class NetworkCardView: SelectableGlassCardView {
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     func update(snapshot: MetricsSnapshot, downloadHistory: [Double], uploadHistory: [Double]) {
-        download.update(value: RateFormatter.detail(snapshot.downloadBytesPerSecond), history: downloadHistory)
         upload.update(value: RateFormatter.detail(snapshot.uploadBytesPerSecond), history: uploadHistory)
+        download.update(value: RateFormatter.detail(snapshot.downloadBytesPerSecond), history: downloadHistory)
     }
 }
 
-private final class NetworkMetricView: NSView {
-    private let valueLabel = makeLabel("0 KB/s", size: 21, weight: .semibold, color: .labelColor, monospaced: true)
+private final class NetworkMetricColumn: NSView {
+    private let valueLabel = makeLabel("0 KB/s", size: 20, weight: .semibold, color: .labelColor, monospaced: true)
     private let sparkline: SparklineView
 
     init(title: String, symbol: String, accent: NSColor) {
-        sparkline = SparklineView(accent: accent)
+        sparkline = SparklineView(accents: [accent])
         super.init(frame: .zero)
         translatesAutoresizingMaskIntoConstraints = false
 
-        let titleLabel = makeLabel(title, size: 11, weight: .semibold, color: accent)
         let icon = makeSymbol(symbol, size: 10, weight: .semibold, color: accent)
+        let titleLabel = makeLabel(title, size: 11, weight: .semibold, color: accent)
         let titleRow = NSStackView(views: [icon, titleLabel, NSView()])
         titleRow.orientation = .horizontal
         titleRow.alignment = .centerY
         titleRow.spacing = 5
 
-        valueLabel.lineBreakMode = .byClipping
-        valueLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-
         let stack = NSStackView(views: [titleRow, valueLabel, sparkline])
         stack.orientation = .vertical
         stack.alignment = .leading
-        stack.spacing = 6
+        stack.spacing = 4
+        stack.setCustomSpacing(6, after: valueLabel)
         stack.translatesAutoresizingMaskIntoConstraints = false
         addSubview(stack)
+
+        valueLabel.lineBreakMode = .byClipping
+        valueLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
         NSLayoutConstraint.activate([
             stack.leadingAnchor.constraint(equalTo: leadingAnchor),
@@ -433,7 +342,7 @@ private final class NetworkMetricView: NSView {
             stack.bottomAnchor.constraint(equalTo: bottomAnchor),
             titleRow.widthAnchor.constraint(equalTo: stack.widthAnchor),
             sparkline.widthAnchor.constraint(equalTo: stack.widthAnchor),
-            sparkline.heightAnchor.constraint(equalToConstant: 32)
+            sparkline.heightAnchor.constraint(equalToConstant: 28)
         ])
     }
 
@@ -441,30 +350,27 @@ private final class NetworkMetricView: NSView {
 
     func update(value: String, history: [Double]) {
         valueLabel.stringValue = value
-        sparkline.values = history
+        sparkline.series = [history]
     }
 }
 
-private final class UsageCardView: SelectableGlassCardView {
-    private let valueLabel = makeLabel("0%", size: 25, weight: .semibold, color: .labelColor, monospaced: true)
-    private let subtitleLabel = makeLabel("", size: 10, weight: .medium, color: .tertiaryLabelColor)
+private final class UsageCardView: SelectableCardView {
+    private let valueLabel = makeLabel("0%", size: 20, weight: .semibold, color: .labelColor, monospaced: true)
+    private let captionLabel = makeLabel("", size: 10, weight: .regular, color: .secondaryLabelColor)
     private let sparkline: SparklineView
 
     init(title: String, accent: NSColor) {
-        sparkline = SparklineView(accent: accent, fixedMaximum: 100)
+        sparkline = SparklineView(accents: [accent], fixedMaximum: 100)
         super.init(frame: .zero)
-        configureSelection(accent: accent, accessibilityLabel: "\(title) 占用应用")
+        configureSelection(accent: accent, accessibilityLabel: "\(title)占用应用")
 
-        let titleLabel = makeLabel(title, size: 11, weight: .semibold, color: .secondaryLabelColor)
-        let dot = ColorDot(color: accent)
-        let header = NSStackView(views: [titleLabel, NSView(), dot])
-        header.orientation = .horizontal
-        header.alignment = .centerY
+        let titleLabel = makeLabel(title, size: 11, weight: .semibold, color: accent)
 
-        let stack = NSStackView(views: [header, valueLabel, sparkline, subtitleLabel])
+        let stack = NSStackView(views: [titleLabel, valueLabel, sparkline, captionLabel])
         stack.orientation = .vertical
         stack.alignment = .leading
-        stack.spacing = 6
+        stack.spacing = 4
+        stack.setCustomSpacing(6, after: valueLabel)
         stack.translatesAutoresizingMaskIntoConstraints = false
         addSubview(stack)
 
@@ -472,52 +378,49 @@ private final class UsageCardView: SelectableGlassCardView {
             stack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 14),
             stack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -14),
             stack.topAnchor.constraint(equalTo: topAnchor, constant: 12),
-            stack.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -10),
-            header.widthAnchor.constraint(equalTo: stack.widthAnchor),
+            stack.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -12),
             sparkline.widthAnchor.constraint(equalTo: stack.widthAnchor),
-            sparkline.heightAnchor.constraint(equalToConstant: 23),
-            dot.widthAnchor.constraint(equalToConstant: 6),
-            dot.heightAnchor.constraint(equalToConstant: 6)
+            sparkline.heightAnchor.constraint(equalToConstant: 28)
         ])
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
-    func update(value: String, subtitle: String, history: [Double]) {
+    func update(value: String, caption: String, history: [Double]) {
         valueLabel.stringValue = value
-        subtitleLabel.stringValue = subtitle
-        sparkline.values = history
+        captionLabel.stringValue = caption
+        sparkline.series = [history]
     }
 }
 
-private final class AppUsageCardView: GlassCardView {
-    private let titleLabel = makeLabel("网络占用", size: 12, weight: .semibold, color: .secondaryLabelColor)
-    private let valueHeading = makeLabel("实时速度", size: 9, weight: .semibold, color: .tertiaryLabelColor)
+private final class AppUsageCardView: NSView {
+    private let titleLabel = makeLabel("网络占用", size: 11, weight: .regular, color: .secondaryLabelColor)
     private let rows = NSStackView()
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
+        translatesAutoresizingMaskIntoConstraints = false
 
-        let header = NSStackView(views: [titleLabel, NSView(), valueHeading])
+        let header = NSStackView(views: [titleLabel, NSView()])
         header.orientation = .horizontal
         header.alignment = .centerY
 
         rows.orientation = .vertical
         rows.alignment = .leading
-        rows.spacing = 4
+        rows.spacing = 0
 
         let stack = NSStackView(views: [header, rows])
         stack.orientation = .vertical
         stack.alignment = .leading
-        stack.spacing = 8
+        stack.spacing = 6
         stack.translatesAutoresizingMaskIntoConstraints = false
         addSubview(stack)
 
         NSLayoutConstraint.activate([
-            stack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 14),
-            stack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -14),
-            stack.topAnchor.constraint(equalTo: topAnchor, constant: 11),
-            stack.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor, constant: -8),
+            stack.leadingAnchor.constraint(equalTo: leadingAnchor),
+            stack.trailingAnchor.constraint(equalTo: trailingAnchor),
+            stack.topAnchor.constraint(equalTo: topAnchor, constant: 8),
+            stack.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor),
             header.widthAnchor.constraint(equalTo: stack.widthAnchor),
             rows.widthAnchor.constraint(equalTo: stack.widthAnchor)
         ])
@@ -546,19 +449,16 @@ private final class AppUsageCardView: GlassCardView {
         switch metric {
         case .network:
             titleLabel.stringValue = "网络占用"
-            valueHeading.stringValue = "实时速度"
             emptyMessage = "当前没有明显联网应用"
             loadingMessage = "正在读取应用网速…"
             emptySymbol = "network.slash"
         case .cpu:
             titleLabel.stringValue = "CPU 占用"
-            valueHeading.stringValue = "当前占用"
             emptyMessage = "当前没有可显示的进程"
             loadingMessage = "正在读取 CPU 占用…"
             emptySymbol = "cpu"
         case .memory:
             titleLabel.stringValue = "内存占用"
-            valueHeading.stringValue = "当前占用"
             emptyMessage = "当前没有可显示的进程"
             loadingMessage = "正在读取内存占用…"
             emptySymbol = "memorychip"
@@ -581,7 +481,7 @@ private final class AppUsageCardView: GlassCardView {
             row.orientation = .horizontal
             row.alignment = .centerY
             row.spacing = 8
-            row.heightAnchor.constraint(equalToConstant: 90).isActive = true
+            row.heightAnchor.constraint(equalToConstant: 123).isActive = true
             rows.addArrangedSubview(row)
             return
         }
@@ -593,9 +493,9 @@ private final class AppUsageCardView: GlassCardView {
                         name: app.name,
                         iconPath: app.iconPath,
                         primaryText: "↑ \(RateFormatter.menu(app.uploadBytesPerSecond))/s",
-                        primaryColor: .glanceBlue,
+                        primaryColor: .labelColor,
                         secondaryText: "↓ \(RateFormatter.menu(app.downloadBytesPerSecond))/s",
-                        secondaryColor: .glanceCyan
+                        secondaryColor: .secondaryLabelColor
                     )
                 )
             }
@@ -604,29 +504,31 @@ private final class AppUsageCardView: GlassCardView {
 
         for app in processApps.prefix(4) {
             let value: String
-            let color: NSColor
             if metric == .cpu {
                 value = CPUFormatter.process(app.cpuPercent)
-                color = .glanceBlue
             } else {
                 value = MemoryFormatter.process(app.memoryBytes)
-                color = .glanceViolet
             }
             addRow(
                 AppUsageRowView(
                     name: app.name,
                     iconPath: app.iconPath,
                     primaryText: value,
-                    primaryColor: color
+                    primaryColor: .labelColor
                 )
             )
         }
     }
 
     private func addRow(_ row: AppUsageRowView) {
-            rows.addArrangedSubview(row)
-            row.heightAnchor.constraint(equalToConstant: 25).isActive = true
-            row.widthAnchor.constraint(equalTo: rows.widthAnchor).isActive = true
+        if !rows.arrangedSubviews.isEmpty {
+            let divider = makeSectionSeparator(inset: 34)
+            rows.addArrangedSubview(divider)
+            divider.widthAnchor.constraint(equalTo: rows.widthAnchor).isActive = true
+        }
+        rows.addArrangedSubview(row)
+        row.heightAnchor.constraint(equalToConstant: 30).isActive = true
+        row.widthAnchor.constraint(equalTo: rows.widthAnchor).isActive = true
     }
 }
 
@@ -643,36 +545,44 @@ private final class AppUsageRowView: NSView {
         translatesAutoresizingMaskIntoConstraints = false
 
         let appIcon = AppIconView(iconPath: iconPath, appName: appName)
-        let name = makeLabel(appName, size: 11, weight: .medium, color: .labelColor)
+        let name = makeLabel(appName, size: 12, weight: .medium, color: .labelColor)
         name.lineBreakMode = .byTruncatingTail
 
-        let primary = makeLabel(primaryText, size: 9, weight: .semibold, color: primaryColor, monospaced: true)
+        let primary = makeLabel(primaryText, size: 11, weight: .semibold, color: primaryColor, monospaced: true)
         primary.alignment = .right
+        primary.setContentHuggingPriority(.required, for: .horizontal)
+        primary.setContentCompressionResistancePriority(.required, for: .horizontal)
+
         let values = NSStackView(views: [primary])
-        values.orientation = .vertical
-        values.alignment = .trailing
-        values.spacing = 1
+        values.orientation = .horizontal
+        values.alignment = .centerY
+        values.spacing = 12
         if let secondaryText {
-            let secondary = makeLabel(secondaryText, size: 9, weight: .semibold, color: secondaryColor, monospaced: true)
+            let secondary = makeLabel(secondaryText, size: 11, weight: .semibold, color: secondaryColor, monospaced: true)
             secondary.alignment = .right
+            secondary.setContentHuggingPriority(.required, for: .horizontal)
+            secondary.setContentCompressionResistancePriority(.required, for: .horizontal)
             values.addArrangedSubview(secondary)
         }
 
-        let stack = NSStackView(views: [appIcon, name, NSView(), values])
-        stack.orientation = .horizontal
-        stack.alignment = .centerY
-        stack.spacing = 9
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(stack)
+        name.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        name.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        appIcon.translatesAutoresizingMaskIntoConstraints = false
+        values.translatesAutoresizingMaskIntoConstraints = false
+
+        let row = NSStackView(views: [appIcon, name, NSView(), values])
+        row.orientation = .horizontal
+        row.alignment = .centerY
+        row.spacing = 9
+        row.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(row)
 
         NSLayoutConstraint.activate([
-            stack.leadingAnchor.constraint(equalTo: leadingAnchor),
-            stack.trailingAnchor.constraint(equalTo: trailingAnchor),
-            stack.topAnchor.constraint(equalTo: topAnchor),
-            stack.bottomAnchor.constraint(equalTo: bottomAnchor),
+            row.leadingAnchor.constraint(equalTo: leadingAnchor),
+            row.trailingAnchor.constraint(equalTo: trailingAnchor),
+            row.centerYAnchor.constraint(equalTo: centerYAnchor),
             appIcon.widthAnchor.constraint(equalToConstant: 25),
-            appIcon.heightAnchor.constraint(equalToConstant: 25),
-            values.widthAnchor.constraint(greaterThanOrEqualToConstant: 72)
+            appIcon.heightAnchor.constraint(equalToConstant: 25)
         ])
     }
 
@@ -701,34 +611,11 @@ private final class SettingsPanelView: NSView {
     private func build() {
         let back = makePlainButton(title: "", symbol: "chevron.left", target: self, action: #selector(goBack))
         back.toolTip = "返回状态面板"
-        let title = makeLabel("设置", size: 18, weight: .semibold, color: .labelColor)
-        let subtitle = makeLabel("保持简洁，不打扰菜单栏", size: 11, weight: .medium, color: .secondaryLabelColor)
-        let titleStack = NSStackView(views: [title, subtitle])
-        titleStack.orientation = .vertical
-        titleStack.alignment = .leading
-        titleStack.spacing = 2
-        let header = NSStackView(views: [back, titleStack, NSView()])
+        let title = makeLabel("监控设置", size: 15, weight: .semibold, color: .labelColor)
+        let header = NSStackView(views: [back, title, NSView()])
         header.orientation = .horizontal
         header.alignment = .centerY
-        header.spacing = 10
-
-        let menuIcon = makeSymbol("arrow.up.arrow.down", size: 13, weight: .semibold, color: .glanceBlue)
-        let menuTitle = makeLabel("菜单栏只显示网速", size: 12, weight: .semibold, color: .labelColor)
-        let menuSubtitle = makeLabel("上传在上、下载在下，宽度固定，不会随数字晃动", size: 10, weight: .regular, color: .secondaryLabelColor)
-        menuSubtitle.lineBreakMode = .byWordWrapping
-        menuSubtitle.maximumNumberOfLines = 2
-        menuSubtitle.preferredMaxLayoutWidth = 235
-        menuSubtitle.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        let menuLabels = NSStackView(views: [menuTitle, menuSubtitle])
-        menuLabels.orientation = .vertical
-        menuLabels.alignment = .leading
-        menuLabels.spacing = 2
-        let menuSummary = NSStackView(views: [menuIcon, menuLabels, NSView()])
-        menuSummary.orientation = .horizontal
-        menuSummary.alignment = .centerY
-        menuSummary.spacing = 10
-        menuSummary.heightAnchor.constraint(equalToConstant: 54).isActive = true
-        let menuCard = wrapInCard(menuSummary, horizontalPadding: 14)
+        header.spacing = 8
 
         let launchRow = ToggleRow(
             title: "开机自动启动",
@@ -738,14 +625,14 @@ private final class SettingsPanelView: NSView {
             onChange: { [weak self] enabled in
                 self?.settings.setLaunchAtLogin(enabled)
                 self?.launchError.stringValue = self?.settings.launchError ?? ""
+                self?.launchError.isHidden = self?.launchError.stringValue.isEmpty ?? true
             }
         )
-        let launchCard = wrapInCard(launchRow, horizontalPadding: 14)
         launchError.lineBreakMode = .byWordWrapping
         launchError.maximumNumberOfLines = 2
+        launchError.isHidden = launchError.stringValue.isEmpty
 
         updateRow.onAction = { [weak self] in self?.handleUpdateAction() }
-        let updateCard = wrapInCard(updateRow, horizontalPadding: 14)
 
         let privacyTitle = makeLabel("关于数据", size: 12, weight: .semibold, color: .labelColor)
         let privacyIcon = makeSymbol("lock.shield", size: 12, weight: .semibold, color: .glanceBlue)
@@ -762,11 +649,11 @@ private final class SettingsPanelView: NSView {
         privacyText.maximumNumberOfLines = 0
         privacyText.preferredMaxLayoutWidth = 270
         privacyText.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+
         let privacyStack = NSStackView(views: [privacyHeader, privacyText])
         privacyStack.orientation = .vertical
         privacyStack.alignment = .leading
         privacyStack.spacing = 8
-        let privacyCard = wrapInCard(privacyStack, horizontalPadding: 16)
 
         let about = makeLabel(
             "NetHalo \(currentVersion) · 原生 macOS",
@@ -776,48 +663,45 @@ private final class SettingsPanelView: NSView {
         )
         about.alignment = .center
 
-        let stack = NSStackView(
-            views: [header, menuCard, launchCard, launchError, updateCard, privacyCard, NSView(), about]
-        )
+        let headerDivider = makeSectionSeparator()
+        let launchDivider = makeSectionSeparator(inset: 34)
+        let updateDivider = makeSectionSeparator()
+        let stack = NSStackView(views: [
+            header,
+            headerDivider,
+            launchRow,
+            launchError,
+            launchDivider,
+            updateRow,
+            updateDivider,
+            privacyStack,
+            NSView(),
+            about
+        ])
         stack.orientation = .vertical
         stack.alignment = .leading
-        stack.spacing = 14
+        stack.spacing = 0
+        stack.setCustomSpacing(8, after: launchError)
+        stack.setCustomSpacing(12, after: updateDivider)
         stack.translatesAutoresizingMaskIntoConstraints = false
         addSubview(stack)
 
         NSLayoutConstraint.activate([
-            stack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20),
-            stack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -20),
-            stack.topAnchor.constraint(equalTo: topAnchor, constant: 20),
-            stack.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -18),
+            stack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
+            stack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
+            stack.topAnchor.constraint(equalTo: topAnchor, constant: 10),
+            stack.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -12),
+            header.heightAnchor.constraint(equalToConstant: 48),
             header.widthAnchor.constraint(equalTo: stack.widthAnchor),
-            menuCard.widthAnchor.constraint(equalTo: stack.widthAnchor),
-            launchCard.widthAnchor.constraint(equalTo: stack.widthAnchor),
+            launchRow.widthAnchor.constraint(equalTo: stack.widthAnchor),
             launchError.widthAnchor.constraint(equalTo: stack.widthAnchor),
-            updateCard.widthAnchor.constraint(equalTo: stack.widthAnchor),
-            privacyCard.widthAnchor.constraint(equalTo: stack.widthAnchor),
-            about.widthAnchor.constraint(equalTo: stack.widthAnchor)
+            updateRow.widthAnchor.constraint(equalTo: stack.widthAnchor),
+            privacyStack.widthAnchor.constraint(equalTo: stack.widthAnchor),
+            about.widthAnchor.constraint(equalTo: stack.widthAnchor),
+            headerDivider.widthAnchor.constraint(equalTo: stack.widthAnchor),
+            launchDivider.widthAnchor.constraint(equalTo: stack.widthAnchor),
+            updateDivider.widthAnchor.constraint(equalTo: stack.widthAnchor)
         ])
-    }
-
-    private func wrapInCard(_ content: NSView, horizontalPadding: CGFloat) -> GlassCardView {
-        let card = GlassCardView()
-        card.addSubview(content)
-        content.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            content.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: horizontalPadding),
-            content.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -horizontalPadding),
-            content.topAnchor.constraint(equalTo: card.topAnchor, constant: 4),
-            content.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -4)
-        ])
-        return card
-    }
-
-    private func separator() -> NSView {
-        let box = NSBox()
-        box.boxType = .separator
-        box.heightAnchor.constraint(equalToConstant: 1).isActive = true
-        return box
     }
 
     @objc private func goBack() {
@@ -1009,13 +893,13 @@ private final class RoundedPanelShadowView: NSView {
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
         wantsLayer = true
-        layer?.cornerRadius = 22
+        layer?.cornerRadius = 20
         layer?.cornerCurve = .continuous
         layer?.masksToBounds = false
         layer?.shadowColor = NSColor.black.cgColor
-        layer?.shadowOpacity = 0.28
-        layer?.shadowRadius = 18
-        layer?.shadowOffset = CGSize(width: 0, height: -7)
+        layer?.shadowOpacity = 0.18
+        layer?.shadowRadius = 15
+        layer?.shadowOffset = CGSize(width: 0, height: -4)
         updateShadowPath()
     }
 
@@ -1031,8 +915,8 @@ private final class RoundedPanelShadowView: NSView {
     private func updateShadowPath() {
         layer?.shadowPath = CGPath(
             roundedRect: bounds,
-            cornerWidth: 22,
-            cornerHeight: 22,
+            cornerWidth: 20,
+            cornerHeight: 20,
             transform: nil
         )
     }
@@ -1053,9 +937,9 @@ private final class RoundedPanelRimView: NSView {
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
         let rect = bounds.insetBy(dx: 0.5, dy: 0.5)
-        let path = NSBezierPath(roundedRect: rect, xRadius: 21.5, yRadius: 21.5)
-        NSColor.separatorColor.withAlphaComponent(0.24).setStroke()
-        path.lineWidth = 0.6
+        let path = NSBezierPath(roundedRect: rect, xRadius: 19.5, yRadius: 19.5)
+        NSColor.separatorColor.withAlphaComponent(0.20).setStroke()
+        path.lineWidth = 0.5
         path.stroke()
     }
 
@@ -1065,7 +949,7 @@ private final class RoundedPanelRimView: NSView {
     }
 }
 
-private class SelectableGlassCardView: GlassCardView {
+private class SelectableCardView: NSView {
     var onSelect: (() -> Void)?
 
     private var selectionAccent = NSColor.glanceBlue
@@ -1075,6 +959,7 @@ private class SelectableGlassCardView: GlassCardView {
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
+        translatesAutoresizingMaskIntoConstraints = false
         let recognizer = NSClickGestureRecognizer(target: self, action: #selector(activateSelection))
         addGestureRecognizer(recognizer)
         focusRingType = .none
@@ -1087,7 +972,6 @@ private class SelectableGlassCardView: GlassCardView {
 
     func configureSelection(accent: NSColor, accessibilityLabel: String) {
         selectionAccent = accent
-        toolTip = "点击查看\(accessibilityLabel)"
         setAccessibilityLabel(accessibilityLabel)
     }
 
@@ -1132,50 +1016,36 @@ private class SelectableGlassCardView: GlassCardView {
         needsDisplay = true
     }
 
-    override func resetCursorRects() {
-        addCursorRect(bounds, cursor: .pointingHand)
-    }
-
-    override func draw(_ dirtyRect: NSRect) {
-        super.draw(dirtyRect)
-        guard metricSelected || hovered else { return }
-
-        let rect = bounds.insetBy(dx: 1.2, dy: 1.2)
-        let path = NSBezierPath(roundedRect: rect, xRadius: 17.5, yRadius: 17.5)
-        if metricSelected {
-            selectionAccent.withAlphaComponent(0.045).setFill()
-            path.fill()
-        }
-        selectionAccent.withAlphaComponent(metricSelected ? 0.72 : 0.28).setStroke()
-        path.lineWidth = metricSelected ? 1.5 : 1
-        path.stroke()
-    }
-
-}
-
-private class GlassCardView: NSView {
-    override init(frame frameRect: NSRect) {
-        super.init(frame: frameRect)
-        translatesAutoresizingMaskIntoConstraints = false
-    }
-
-    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
-
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
         let rect = bounds.insetBy(dx: 0.5, dy: 0.5)
-        let path = NSBezierPath(roundedRect: rect, xRadius: 18, yRadius: 18)
+        let path = NSBezierPath(roundedRect: rect, xRadius: 12, yRadius: 12)
         let dark = effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
-        let fill = dark
+
+        let base = dark
             ? NSColor.black.withAlphaComponent(0.08)
             : NSColor.white.withAlphaComponent(0.14)
-        fill.setFill()
+        base.setFill()
         path.fill()
-        let border = dark
-            ? NSColor.white.withAlphaComponent(0.10)
-            : NSColor.separatorColor.withAlphaComponent(0.22)
-        border.setStroke()
-        path.lineWidth = 0.7
+
+        if metricSelected {
+            selectionAccent.withAlphaComponent(0.08).setFill()
+            path.fill()
+        } else if hovered {
+            NSColor.labelColor.withAlphaComponent(0.04).setFill()
+            path.fill()
+        }
+
+        if metricSelected {
+            selectionAccent.withAlphaComponent(0.5).setStroke()
+            path.lineWidth = 1
+        } else {
+            let border = dark
+                ? NSColor.white.withAlphaComponent(0.10)
+                : NSColor.separatorColor.withAlphaComponent(0.22)
+            border.setStroke()
+            path.lineWidth = 0.7
+        }
         path.stroke()
     }
 
@@ -1186,12 +1056,12 @@ private class GlassCardView: NSView {
 }
 
 private final class SparklineView: NSView {
-    var values: [Double] = [] { didSet { needsDisplay = true } }
-    private let accent: NSColor
+    var series: [[Double]] = [] { didSet { needsDisplay = true } }
+    private let accents: [NSColor]
     private let fixedMaximum: Double?
 
-    init(accent: NSColor, fixedMaximum: Double? = nil) {
-        self.accent = accent
+    init(accents: [NSColor], fixedMaximum: Double? = nil) {
+        self.accents = accents
         self.fixedMaximum = fixedMaximum
         super.init(frame: .zero)
         translatesAutoresizingMaskIntoConstraints = false
@@ -1201,101 +1071,46 @@ private final class SparklineView: NSView {
 
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
-        guard values.count > 1, bounds.width > 0, bounds.height > 0 else {
+        let drawable = series.filter { $0.count > 1 }
+        guard !drawable.isEmpty, bounds.width > 0, bounds.height > 0 else {
             let baseline = NSBezierPath()
-            baseline.move(to: NSPoint(x: 0, y: bounds.midY))
-            baseline.line(to: NSPoint(x: bounds.maxX, y: bounds.midY))
-            accent.withAlphaComponent(0.18).setStroke()
-            baseline.lineWidth = 2
+            baseline.move(to: NSPoint(x: 0, y: 1))
+            baseline.line(to: NSPoint(x: bounds.maxX, y: 1))
+            (accents.first ?? NSColor.secondaryLabelColor).withAlphaComponent(0.18).setStroke()
+            baseline.lineWidth = 1
             baseline.stroke()
             return
         }
 
-        let maximum = max(1, fixedMaximum ?? values.max() ?? 1)
-        let xStep = bounds.width / CGFloat(values.count - 1)
-        let path = NSBezierPath()
-        path.lineWidth = 2
-        path.lineCapStyle = .round
-        path.lineJoinStyle = .round
+        let maximum = max(1, fixedMaximum ?? drawable.flatMap { $0 }.max() ?? 1)
+        for (index, values) in drawable.enumerated() {
+            let accent = accents[min(index, accents.count - 1)]
+            let xStep = bounds.width / CGFloat(values.count - 1)
+            let line = NSBezierPath()
+            line.lineWidth = 2
+            line.lineCapStyle = .round
+            line.lineJoinStyle = .round
 
-        for (index, value) in values.enumerated() {
-            let ratio = min(1, max(0, value / maximum))
-            let point = NSPoint(
-                x: CGFloat(index) * xStep,
-                y: 1 + CGFloat(ratio) * (bounds.height - 2)
-            )
-            index == 0 ? path.move(to: point) : path.line(to: point)
+            for (pointIndex, value) in values.enumerated() {
+                let ratio = min(1, max(0, value / maximum))
+                let point = NSPoint(
+                    x: CGFloat(pointIndex) * xStep,
+                    y: 1 + CGFloat(ratio) * (bounds.height - 2)
+                )
+                pointIndex == 0 ? line.move(to: point) : line.line(to: point)
+            }
+
+            if let fill = line.copy() as? NSBezierPath {
+                fill.line(to: NSPoint(x: CGFloat(values.count - 1) * xStep, y: 1))
+                fill.line(to: NSPoint(x: 0, y: 1))
+                fill.close()
+                accent.withAlphaComponent(0.12).setFill()
+                fill.fill()
+            }
+            accent.setStroke()
+            line.stroke()
         }
-
-        accent.setStroke()
-        path.stroke()
     }
-}
-
-private final class AppLogoView: NSView {
-    override init(frame frameRect: NSRect) {
-        super.init(frame: .zero)
-        translatesAutoresizingMaskIntoConstraints = false
-        let image = NSApp.applicationIconImage ?? NSImage()
-        let imageView = NSImageView(image: image)
-        imageView.imageScaling = .scaleProportionallyUpOrDown
-        imageView.setAccessibilityLabel("NetHalo 图标")
-        addSubview(imageView)
-        imageView.pinToEdges(of: self)
-    }
-
-    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
-}
-
-private final class PillLabel: NSView {
-    private let label = makeLabel("", size: 10, weight: .semibold, color: .labelColor)
-    private let dot = ColorDot(color: .glanceGreen)
-
-    override init(frame frameRect: NSRect) {
-        super.init(frame: frameRect)
-        translatesAutoresizingMaskIntoConstraints = false
-        wantsLayer = true
-        layer?.cornerRadius = 13
-
-        let stack = NSStackView(views: [dot, label])
-        stack.orientation = .horizontal
-        stack.alignment = .centerY
-        stack.spacing = 6
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(stack)
-        NSLayoutConstraint.activate([
-            stack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 9),
-            stack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -9),
-            stack.topAnchor.constraint(equalTo: topAnchor, constant: 6),
-            stack.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -6),
-            dot.widthAnchor.constraint(equalToConstant: 6),
-            dot.heightAnchor.constraint(equalToConstant: 6)
-        ])
-    }
-
-    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
-
-    func update(text: String, color: NSColor) {
-        label.stringValue = text
-        label.textColor = color
-        dot.color = color
-        layer?.backgroundColor = color.withAlphaComponent(0.09).cgColor
-    }
-}
-
-private final class ColorDot: NSView {
-    var color: NSColor { didSet { layer?.backgroundColor = color.cgColor } }
-
-    init(color: NSColor) {
-        self.color = color
-        super.init(frame: .zero)
-        translatesAutoresizingMaskIntoConstraints = false
-        wantsLayer = true
-        layer?.cornerRadius = 3
-        layer?.backgroundColor = color.cgColor
-    }
-
-    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 }
 
 private final class AppIconView: NSView {
@@ -1373,6 +1188,35 @@ private func makePlainButton(
         button.imagePosition = title.isEmpty ? .imageOnly : .imageLeading
     }
     return button
+}
+
+private func makeSectionSeparator(vertical: Bool = false, inset: CGFloat = 0) -> NSView {
+    let container = NSView()
+    container.translatesAutoresizingMaskIntoConstraints = false
+
+    let box = NSBox()
+    box.boxType = .separator
+    box.translatesAutoresizingMaskIntoConstraints = false
+    container.addSubview(box)
+
+    if vertical {
+        NSLayoutConstraint.activate([
+            box.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            box.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            box.topAnchor.constraint(equalTo: container.topAnchor),
+            box.bottomAnchor.constraint(equalTo: container.bottomAnchor)
+        ])
+    } else {
+        container.heightAnchor.constraint(equalToConstant: 1).isActive = true
+        NSLayoutConstraint.activate([
+            box.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: inset),
+            box.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            box.topAnchor.constraint(equalTo: container.topAnchor),
+            box.bottomAnchor.constraint(equalTo: container.bottomAnchor)
+        ])
+    }
+
+    return container
 }
 
 private extension NSView {

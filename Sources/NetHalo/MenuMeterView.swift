@@ -34,18 +34,16 @@ final class MenuMeterView: NSView {
         drawRow(
             arrow: "↑",
             value: upload,
-            y: bounds.midY + 0.2 + Self.verticalOpticalOffset,
-            color: .systemBlue
+            y: bounds.midY + 0.2 + Self.verticalOpticalOffset
         )
         drawRow(
             arrow: "↓",
             value: download,
-            y: max(0, bounds.midY - 10.5 + Self.verticalOpticalOffset),
-            color: .systemTeal
+            y: max(0, bounds.midY - 10.5 + Self.verticalOpticalOffset)
         )
     }
 
-    private func drawRow(arrow: String, value: String, y: CGFloat, color: NSColor) {
+    private func drawRow(arrow: String, value: String, y: CGFloat) {
         let arrowFont = NSFont.systemFont(ofSize: 8.5, weight: .bold)
         let valueFont = NSFont.monospacedDigitSystemFont(ofSize: 8.5, weight: .medium)
         let paragraph = NSMutableParagraphStyle()
@@ -59,7 +57,7 @@ final class MenuMeterView: NSView {
             in: arrowRect,
             withAttributes: [
                 .font: arrowFont,
-                .foregroundColor: color
+                .foregroundColor: NSColor.labelColor
             ]
         )
         (value as NSString).draw(
