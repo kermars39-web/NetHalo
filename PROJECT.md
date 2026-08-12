@@ -1,6 +1,6 @@
 # NetHalo Project Scope / 项目范围
 
-Current version / 当前版本：**1.1**
+Current version / 当前版本：**1.2**
 
 ## Goals / 目标
 

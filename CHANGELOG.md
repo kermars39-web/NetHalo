@@ -2,6 +2,21 @@
 
 NetHalo 的主要变更记录在此。All notable changes to NetHalo are documented here.
 
+## 1.2 — 2026-08-12
+
+### Changed
+
+- 重构点击后的状态面板，移除冗余页头和过度卡片，在保留网络、CPU、内存与分应用排行的前提下缩短整体高度。
+- 分应用网速改为同行显示上传和下载；下载作为黑色主值，上传作为灰色次值，并修正图标、应用名与数值的挤压问题。
+- 简化监控设置页和底部入口，菜单栏上下行箭头改用系统文字色，保持浅色与深色外观一致。
+- Reworked the compact status panel, aligned per-app upload and download on one row, and improved hierarchy and spacing across light and dark appearances.
+
+### Fixed
+
+- 弹层现在只在点击面板外部时关闭，避免面板内部交互被失焦逻辑误收起。
+- 新增离屏浅色、深色预览入口，便于界面调整后进行一致性验证。
+- Fixed outside-click dismissal and added reproducible offscreen previews for UI verification.
+
 ## 1.1 — 2026-08-01
 
 ### Added
