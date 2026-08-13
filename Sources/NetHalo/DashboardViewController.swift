@@ -709,7 +709,7 @@ private final class SettingsPanelView: NSView {
     }
 
     private var currentVersion: String {
-        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.2"
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.3"
     }
 
     private func handleUpdateAction() {

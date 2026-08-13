@@ -12,7 +12,7 @@ const copy = {
     title: "状态，一眼就够了。",
     intro:
       "NetHalo 把实时网速留在菜单栏，把 CPU、内存和分应用占用收进一次点击里。简洁、原生，不打扰。",
-    download: "下载 NetHalo 1.2",
+    download: "下载 NetHalo 1.3",
     downloadMeta: "Apple Silicon · macOS 13+",
     source: "查看源代码",
     firstOpen: "当前版本为临时签名，首次启动请右键应用并选择“打开”。",
@@ -43,7 +43,7 @@ const copy = {
     detailItems: ["最近一分钟趋势", "真实应用图标", "分应用实时排行", "手动检查更新"],
     ctaTitle: "让菜单栏重新安静下来。",
     ctaText: "免费下载、MIT 开源。你可以直接使用，也可以一起把它做得更好。",
-    ctaButton: "下载 1.2",
+    ctaButton: "下载 1.3",
     footer: "Native macOS. Zero telemetry. Built for calm.",
   },
   en: {
@@ -54,7 +54,7 @@ const copy = {
     title: "Your Mac, at a glance.",
     intro:
       "NetHalo keeps live network speed in the menu bar and puts CPU, memory, and per-app usage one click away. Native, focused, and quiet.",
-    download: "Download NetHalo 1.2",
+    download: "Download NetHalo 1.3",
     downloadMeta: "Apple Silicon · macOS 13+",
     source: "View source",
     firstOpen: "This build is ad-hoc signed. Right-click the app and choose Open on first launch.",
@@ -85,7 +85,7 @@ const copy = {
     detailItems: ["One-minute trends", "Real app icons", "Per-app rankings", "Manual update checks"],
     ctaTitle: "Make your menu bar quiet again.",
     ctaText: "Free to download and open source under MIT. Use it as-is or help make it better.",
-    ctaButton: "Download 1.2",
+    ctaButton: "Download 1.3",
     footer: "Native macOS. Zero telemetry. Built for calm.",
   },
 } as const;

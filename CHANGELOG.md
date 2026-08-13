@@ -2,6 +2,14 @@
 
 NetHalo 的主要变更记录在此。All notable changes to NetHalo are documented here.
 
+## 1.3 — 2026-08-13
+
+### Changed
+
+- 菜单栏上传、下载速率补充 `/s` 单位，含义更明确。
+- 保持上下行箭头固定左对齐、速率固定右对齐，并缩短两者之间的留白；数值变化时布局不抖动。
+- Added explicit `/s` units to the menu bar meter and refined its fixed-width alignment for a tighter, steadier native layout.
+
 ## 1.2 — 2026-08-12
 
 ### Changed
