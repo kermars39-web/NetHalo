@@ -46,6 +46,7 @@ final class MenuMeterView: NSView {
     private func drawRow(arrow: String, value: String, y: CGFloat) {
         let arrowFont = NSFont.systemFont(ofSize: 8.5, weight: .bold)
         let valueFont = NSFont.monospacedDigitSystemFont(ofSize: 8.5, weight: .medium)
+        let unitFont = NSFont.systemFont(ofSize: 7.5, weight: .medium)
         let paragraph = NSMutableParagraphStyle()
         paragraph.alignment = .right
         paragraph.lineBreakMode = .byClipping
@@ -60,13 +61,23 @@ final class MenuMeterView: NSView {
                 .foregroundColor: NSColor.labelColor
             ]
         )
-        (value as NSString).draw(
-            in: valueRect,
-            withAttributes: [
+        let displayString = "\(value)/s"
+        let displayValue = NSMutableAttributedString(
+            string: displayString,
+            attributes: [
                 .font: valueFont,
                 .foregroundColor: NSColor.labelColor,
                 .paragraphStyle: paragraph
             ]
+        )
+        displayValue.addAttribute(
+            .font,
+            value: unitFont,
+            range: NSRange(location: (displayString as NSString).length - 2, length: 2)
+        )
+        displayValue.draw(
+            with: valueRect,
+            options: [.usesLineFragmentOrigin, .truncatesLastVisibleLine]
         )
     }
 }

@@ -35,7 +35,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     private func configureStatusItem() {
-        let item = NSStatusBar.system.statusItem(withLength: 38)
+        let item = NSStatusBar.system.statusItem(withLength: 48)
         guard let button = item.button else { return }
 
         button.image = nil
