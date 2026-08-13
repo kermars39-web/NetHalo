@@ -51,12 +51,16 @@ final class MenuMeterView: NSView {
             .font: arrowFont,
             .foregroundColor: NSColor.labelColor
         ]
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.alignment = .right
+        paragraph.lineBreakMode = .byClipping
         let displayString = "\(value)/s"
         let displayValue = NSMutableAttributedString(
             string: displayString,
             attributes: [
                 .font: valueFont,
-                .foregroundColor: NSColor.labelColor
+                .foregroundColor: NSColor.labelColor,
+                .paragraphStyle: paragraph
             ]
         )
         displayValue.addAttribute(
@@ -66,10 +70,13 @@ final class MenuMeterView: NSView {
         )
 
         let arrowColumnWidth: CGFloat = 8
-        let gap: CGFloat = 1
-        let valueWidth = ceil(displayValue.size().width)
         let arrowRect = NSRect(x: 0, y: y, width: arrowColumnWidth, height: 11)
-        let valueRect = NSRect(x: arrowRect.maxX + gap, y: y, width: valueWidth, height: 11)
+        let valueRect = NSRect(
+            x: arrowRect.maxX,
+            y: y,
+            width: max(0, bounds.width - arrowRect.maxX - 1),
+            height: 11
+        )
 
         (arrow as NSString).draw(in: arrowRect, withAttributes: arrowAttributes)
         displayValue.draw(
