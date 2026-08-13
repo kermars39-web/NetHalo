@@ -47,27 +47,16 @@ final class MenuMeterView: NSView {
         let arrowFont = NSFont.systemFont(ofSize: 8.5, weight: .bold)
         let valueFont = NSFont.monospacedDigitSystemFont(ofSize: 8.5, weight: .medium)
         let unitFont = NSFont.systemFont(ofSize: 7.5, weight: .medium)
-        let paragraph = NSMutableParagraphStyle()
-        paragraph.alignment = .right
-        paragraph.lineBreakMode = .byClipping
-
-        let arrowRect = NSRect(x: 0, y: y, width: 8, height: 11)
-        let valueRect = NSRect(x: 8, y: y, width: max(0, bounds.width - 9), height: 11)
-
-        (arrow as NSString).draw(
-            in: arrowRect,
-            withAttributes: [
-                .font: arrowFont,
-                .foregroundColor: NSColor.labelColor
-            ]
-        )
+        let arrowAttributes: [NSAttributedString.Key: Any] = [
+            .font: arrowFont,
+            .foregroundColor: NSColor.labelColor
+        ]
         let displayString = "\(value)/s"
         let displayValue = NSMutableAttributedString(
             string: displayString,
             attributes: [
                 .font: valueFont,
-                .foregroundColor: NSColor.labelColor,
-                .paragraphStyle: paragraph
+                .foregroundColor: NSColor.labelColor
             ]
         )
         displayValue.addAttribute(
@@ -75,6 +64,16 @@ final class MenuMeterView: NSView {
             value: unitFont,
             range: NSRange(location: (displayString as NSString).length - 2, length: 2)
         )
+
+        let gap: CGFloat = 1.5
+        let arrowWidth = ceil((arrow as NSString).size(withAttributes: arrowAttributes).width)
+        let valueWidth = ceil(displayValue.size().width)
+        let rowWidth = arrowWidth + gap + valueWidth
+        let rowX = max(0, bounds.width - rowWidth - 1)
+        let arrowRect = NSRect(x: rowX, y: y, width: arrowWidth, height: 11)
+        let valueRect = NSRect(x: arrowRect.maxX + gap, y: y, width: valueWidth, height: 11)
+
+        (arrow as NSString).draw(in: arrowRect, withAttributes: arrowAttributes)
         displayValue.draw(
             with: valueRect,
             options: [.usesLineFragmentOrigin, .truncatesLastVisibleLine]
