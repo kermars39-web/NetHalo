@@ -65,12 +65,10 @@ final class MenuMeterView: NSView {
             range: NSRange(location: (displayString as NSString).length - 2, length: 2)
         )
 
-        let gap: CGFloat = 1.5
-        let arrowWidth = ceil((arrow as NSString).size(withAttributes: arrowAttributes).width)
+        let arrowColumnWidth: CGFloat = 8
+        let gap: CGFloat = 1
         let valueWidth = ceil(displayValue.size().width)
-        let rowWidth = arrowWidth + gap + valueWidth
-        let rowX = max(0, bounds.width - rowWidth - 1)
-        let arrowRect = NSRect(x: rowX, y: y, width: arrowWidth, height: 11)
+        let arrowRect = NSRect(x: 0, y: y, width: arrowColumnWidth, height: 11)
         let valueRect = NSRect(x: arrowRect.maxX + gap, y: y, width: valueWidth, height: 11)
 
         (arrow as NSString).draw(in: arrowRect, withAttributes: arrowAttributes)
