@@ -42,7 +42,7 @@ test("keeps the bilingual, accessible release surface intact", async () => {
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
     stat(new URL("../public/net-halo-icon.png", import.meta.url)),
-    stat(new URL("../public/og.png", import.meta.url)),
+    stat(new URL("../public/og-1.4.1.png", import.meta.url)),
   ]);
 
   assert.match(page, /language === "zh" \? "en" : "zh"/);

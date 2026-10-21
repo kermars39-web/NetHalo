@@ -19,7 +19,7 @@
 <p align="center"><sub>macOS 13+ · Apple Silicon · MIT License</sub></p>
 
 <p align="center">
-  <img src="promo/nethalo-demo.gif" width="960" alt="NetHalo showing live menu bar network speed and switchable per-app CPU, memory, and network rankings">
+  <img src="promo/nethalo-panel-1.4.1.png" width="540" alt="NetHalo 1.4.1 native panel showing network speed, CPU, a muted violet memory card, and per-app memory usage">
 </p>
 
 <p align="center">

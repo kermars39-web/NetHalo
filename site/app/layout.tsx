@@ -15,13 +15,13 @@ export const metadata: Metadata = {
     description: "Native macOS monitoring without the dashboard clutter.",
     type: "website",
     url: "/NetHalo/",
-    images: [{ url: "/NetHalo/og.png", width: 1200, height: 630, alt: "NetHalo for macOS" }],
+    images: [{ url: "/NetHalo/og-1.4.1.png", width: 1200, height: 630, alt: "NetHalo 1.4.1 for macOS" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "NetHalo — Your Mac, at a glance.",
     description: "Native macOS monitoring without the dashboard clutter.",
-    images: ["/NetHalo/og.png"],
+    images: ["/NetHalo/og-1.4.1.png"],
   },
 };
 

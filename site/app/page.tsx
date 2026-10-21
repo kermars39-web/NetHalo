@@ -154,80 +154,22 @@ export default function Home() {
         <div className="product-visual" aria-label={text.visualLabel}>
           <div className="halo halo-one" />
           <div className="halo halo-two" />
-          <div className="screen-shell">
-            <div className="screen-label">
+          <figure className="native-preview">
+            <figcaption className="screen-label">
               <span className="live-dot" />
-              {text.visualLabel}
-            </div>
-            <div className="product-panel-mock" aria-label="NetHalo product interface preview">
-              <div className="mock-header">
-                <Image src={`${assetBase}/net-halo-icon.png`} alt="" width={38} height={38} />
-                <div>
-                  <strong>NetHalo</strong>
-                  <small>Live system overview</small>
-                </div>
-                <span className="mock-status"><i />Calm</span>
-              </div>
-
-              <div className="mock-network-card">
-                <div className="mock-card-heading">
-                  <strong>Network flow</strong>
-                  <span>↑↓</span>
-                </div>
-                <div className="mock-network-grid">
-                  <div className="mock-network-value upload">
-                    <small>↑ Upload</small>
-                    <strong>8 KB/s</strong>
-                    <div className="mock-spark upload-spark"><i /><i /><i /><i /><i /><i /></div>
-                  </div>
-                  <div className="mock-network-value download">
-                    <small>↓ Download</small>
-                    <strong>26 KB/s</strong>
-                    <div className="mock-spark download-spark"><i /><i /><i /><i /><i /><i /></div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mock-usage-grid">
-                <div className="mock-usage-card">
-                  <span>CPU <i className="blue-dot" /></span>
-                  <strong>28%</strong>
-                  <div className="usage-line blue-line" />
-                  <small>Current load</small>
-                </div>
-                <div className="mock-usage-card">
-                  <span>Memory <i className="violet-dot" /></span>
-                  <strong>67%</strong>
-                  <div className="usage-line violet-line" />
-                  <small>16.1 GB used</small>
-                </div>
-              </div>
-
-              <div className="mock-app-card">
-                <div className="mock-card-heading">
-                  <strong>App activity</strong>
-                  <span>Live</span>
-                </div>
-                {[
-                  ["Browser", "18K/s", "blue"],
-                  ["Terminal", "8K/s", "navy"],
-                  ["Cloud Sync", "5K/s", "cyan"],
-                  ["Messages", "2K/s", "green"],
-                ].map(([name, value, color]) => (
-                  <div className="mock-app-row" key={name}>
-                    <i className={`mock-app-icon ${color}`} />
-                    <strong>{name}</strong>
-                    <span>{value}</span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mock-footer">
-                <span>Local monitoring</span>
-                <span>Settings&nbsp;&nbsp;⏻</span>
-              </div>
-            </div>
-          </div>
+              NetHalo 1.4.1 · {text.visualLabel}
+            </figcaption>
+            <Image
+              className="native-panel-image"
+              src={`${assetBase}/nethalo-panel-1.4.1.png`}
+              alt={language === "zh"
+                ? "NetHalo 1.4.1 原生界面：上下行网速、CPU、柔和灰紫色内存卡片及应用内存排行"
+                : "NetHalo 1.4.1 native interface with network speed, CPU, muted violet memory card, and per-app memory usage"}
+              width={764}
+              height={990}
+              priority
+            />
+          </figure>
         </div>
       </section>
 
