@@ -7,7 +7,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private let settings = SettingsStore()
     private let panel = StatusPanel()
     private var statusItem: NSStatusItem?
-    private weak var menuMeterView: MenuMeterView?
+    private var displayedRates: (download: String, upload: String)?
     private var cancellables = Set<AnyCancellable>()
     private var localEventMonitor: Any?
     private var globalMouseMonitor: Any?
@@ -38,23 +38,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let item = NSStatusBar.system.statusItem(withLength: 44)
         guard let button = item.button else { return }
 
-        button.image = nil
         button.title = ""
+        button.imagePosition = .imageOnly
+        button.imageScaling = .scaleNone
+        if let cell = button.cell as? NSButtonCell {
+            cell.showsStateBy = cell.highlightsBy
+        }
         button.target = self
         button.action = #selector(handleStatusItemClick(_:))
         button.sendAction(on: [.leftMouseUp, .rightMouseUp])
         button.toolTip = "NetHalo"
         button.setAccessibilityLabel("NetHalo 实时网速")
-
-        let meter = MenuMeterView()
-        button.addSubview(meter)
-        NSLayoutConstraint.activate([
-            meter.leadingAnchor.constraint(equalTo: button.leadingAnchor),
-            meter.trailingAnchor.constraint(equalTo: button.trailingAnchor),
-            meter.topAnchor.constraint(equalTo: button.topAnchor),
-            meter.bottomAnchor.constraint(equalTo: button.bottomAnchor)
-        ])
-        menuMeterView = meter
 
         statusItem = item
         updateStatusMeter(model.snapshot)
@@ -105,13 +99,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         guard let button = statusItem?.button else { return }
         let download = RateFormatter.menu(snapshot.downloadBytesPerSecond)
         let upload = RateFormatter.menu(snapshot.uploadBytesPerSecond)
-        menuMeterView?.update(download: download, upload: upload)
+        if displayedRates?.download != download || displayedRates?.upload != upload {
+            button.image = MenuMeterView.image(download: download, upload: upload)
+            displayedRates = (download, upload)
+        }
         button.toolTip = "下载 \(download)/s · 上传 \(upload)/s"
         button.setAccessibilityValue("下载 \(download) 每秒，上传 \(upload) 每秒")
     }
 
     @objc
     private func handleStatusItemClick(_ sender: NSStatusBarButton) {
+        // Native tracking can reset the cell after sending its action.
+        // Reconcile the persistent selection once tracking has finished.
+        defer {
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                self.statusItem?.button?.state = self.panel.isVisible ? .on : .off
+            }
+        }
         if NSApp.currentEvent?.type == .rightMouseUp {
             closePanel()
             showContextMenu(from: sender)
@@ -129,6 +134,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         model.setDetailsVisible(true)
         positionPanel(below: button)
         panel.makeKeyAndOrderFront(nil)
+        button.state = .on
     }
 
     private func positionPanel(below button: NSStatusBarButton) {
@@ -147,6 +153,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private func closePanel() {
         guard panel.isVisible else { return }
         panel.orderOut(nil)
+        statusItem?.button?.state = .off
         model.setDetailsVisible(false)
     }
 

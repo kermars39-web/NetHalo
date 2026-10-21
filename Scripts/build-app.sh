@@ -6,8 +6,18 @@ PROJECT_DIR="${SCRIPT_DIR:h}"
 APP_DIR="$PROJECT_DIR/dist/NetHalo.app"
 CONTENTS_DIR="$APP_DIR/Contents"
 
-swift build --disable-sandbox --package-path "$PROJECT_DIR" -c release
-BIN_DIR="$(swift build --disable-sandbox --package-path "$PROJECT_DIR" -c release --show-bin-path)"
+# Keep compiler caches writable when the app is built from a restricted agent.
+export CLANG_MODULE_CACHE_PATH="${CLANG_MODULE_CACHE_PATH:-$PROJECT_DIR/.build/ModuleCache.noindex}"
+export SWIFT_MODULECACHE_PATH="${SWIFT_MODULECACHE_PATH:-$CLANG_MODULE_CACHE_PATH}"
+mkdir -p "$CLANG_MODULE_CACHE_PATH" "$SWIFT_MODULECACHE_PATH"
+BUILD_ARGS=(
+  --disable-sandbox --package-path "$PROJECT_DIR"
+  --scratch-path "${NETHALO_BUILD_PATH:-$PROJECT_DIR/.build}"
+  -c release -debug-info-format none
+  -Xswiftc -module-cache-path -Xswiftc "$SWIFT_MODULECACHE_PATH"
+)
+swift build "${BUILD_ARGS[@]}"
+BIN_DIR="$(swift build "${BUILD_ARGS[@]}" --show-bin-path)"
 "$BIN_DIR/NetHalo" --self-test
 
 rm -rf "$APP_DIR"

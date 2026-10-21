@@ -709,7 +709,7 @@ private final class SettingsPanelView: NSView {
     }
 
     private var currentVersion: String {
-        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.3"
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.4.1"
     }
 
     private func handleUpdateAction() {
@@ -949,8 +949,16 @@ private final class RoundedPanelRimView: NSView {
     }
 }
 
-private class SelectableCardView: NSView {
+private class SelectableCardView: NSButton {
     var onSelect: (() -> Void)?
+
+    override var isEnabled: Bool {
+        didSet {
+            if !isEnabled { hovered = false }
+            subviews.forEach { $0.alphaValue = isEnabled ? 1 : 0.45 }
+            needsDisplay = true
+        }
+    }
 
     private var selectionAccent = NSColor.glanceBlue
     private var metricSelected = false
@@ -960,19 +968,34 @@ private class SelectableCardView: NSView {
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
         translatesAutoresizingMaskIntoConstraints = false
-        let recognizer = NSClickGestureRecognizer(target: self, action: #selector(activateSelection))
-        addGestureRecognizer(recognizer)
-        focusRingType = .none
-        setAccessibilityRole(.button)
+        title = ""
+        isBordered = false
+        setButtonType(.momentaryChange)
+        target = self
+        action = #selector(activateSelection)
+        focusRingType = .exterior
+        NSWorkspace.shared.notificationCenter.addObserver(
+            self,
+            selector: #selector(accessibilityDisplayOptionsDidChange),
+            name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification,
+            object: nil
+        )
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
-    override var acceptsFirstResponder: Bool { true }
+    deinit {
+        NSWorkspace.shared.notificationCenter.removeObserver(self)
+    }
+
+    @objc private func accessibilityDisplayOptionsDidChange() {
+        needsDisplay = true
+    }
 
     func configureSelection(accent: NSColor, accessibilityLabel: String) {
         selectionAccent = accent
         setAccessibilityLabel(accessibilityLabel)
+        setAccessibilityValue(metricSelected ? "已选中" : "未选中")
     }
 
     func setMetricSelected(_ selected: Bool) {
@@ -983,15 +1006,26 @@ private class SelectableCardView: NSView {
     }
 
     @objc private func activateSelection() {
+        guard isEnabled else { return }
         onSelect?()
     }
 
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        super.hitTest(point) == nil ? nil : self
+    }
+
     override func keyDown(with event: NSEvent) {
-        if event.keyCode == 36 || event.keyCode == 49 {
-            activateSelection()
+        if event.keyCode == 36 {
+            performClick(nil)
         } else {
             super.keyDown(with: event)
         }
+    }
+
+    override var focusRingMaskBounds: NSRect { bounds.insetBy(dx: 2, dy: 2) }
+
+    override func drawFocusRingMask() {
+        NSBezierPath(roundedRect: focusRingMaskBounds, xRadius: 10, yRadius: 10).fill()
     }
 
     override func updateTrackingAreas() {
@@ -999,7 +1033,7 @@ private class SelectableCardView: NSView {
         if let trackingArea { removeTrackingArea(trackingArea) }
         let area = NSTrackingArea(
             rect: bounds,
-            options: [.activeInKeyWindow, .mouseEnteredAndExited],
+            options: [.activeAlways, .mouseEnteredAndExited, .inVisibleRect],
             owner: self
         )
         addTrackingArea(area)
@@ -1007,7 +1041,7 @@ private class SelectableCardView: NSView {
     }
 
     override func mouseEntered(with event: NSEvent) {
-        hovered = true
+        hovered = isEnabled
         needsDisplay = true
     }
 
@@ -1017,7 +1051,8 @@ private class SelectableCardView: NSView {
     }
 
     override func draw(_ dirtyRect: NSRect) {
-        super.draw(dirtyRect)
+        // Keep native button tracking, but draw only the card surface. Drawing
+        // the button cell here would add its system bezel beneath our content.
         let rect = bounds.insetBy(dx: 0.5, dy: 0.5)
         let path = NSBezierPath(roundedRect: rect, xRadius: 12, yRadius: 12)
         let dark = effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
@@ -1028,23 +1063,29 @@ private class SelectableCardView: NSView {
         base.setFill()
         path.fill()
 
+        let contrast = NSWorkspace.shared.accessibilityDisplayShouldIncreaseContrast
+        let accent = isEnabled ? selectionAccent : NSColor.disabledControlTextColor
         if metricSelected {
-            selectionAccent.withAlphaComponent(0.08).setFill()
+            accent.withAlphaComponent(contrast ? 0.18 : 0.08).setFill()
             path.fill()
-        } else if hovered {
+        }
+        if isEnabled && isHighlighted {
+            NSColor.labelColor.withAlphaComponent(0.12).setFill()
+            path.fill()
+        } else if isEnabled && hovered {
             NSColor.labelColor.withAlphaComponent(0.04).setFill()
             path.fill()
         }
 
         if metricSelected {
-            selectionAccent.withAlphaComponent(0.5).setStroke()
-            path.lineWidth = 1
+            accent.withAlphaComponent(contrast ? 1 : 0.5).setStroke()
+            path.lineWidth = contrast ? 2 : 1
         } else {
-            let border = dark
+            let border = contrast ? NSColor.labelColor : dark
                 ? NSColor.white.withAlphaComponent(0.10)
                 : NSColor.separatorColor.withAlphaComponent(0.22)
             border.setStroke()
-            path.lineWidth = 0.7
+            path.lineWidth = contrast ? 1 : 0.7
         }
         path.stroke()
     }
@@ -1232,9 +1273,14 @@ private extension NSView {
 }
 
 private extension NSColor {
-    static let glanceBlue = NSColor(calibratedRed: 0.12, green: 0.47, blue: 0.96, alpha: 1)
-    static let glanceCyan = NSColor(calibratedRed: 0.02, green: 0.69, blue: 0.74, alpha: 1)
-    static let glanceViolet = NSColor(calibratedRed: 0.53, green: 0.36, blue: 0.96, alpha: 1)
-    static let glanceGreen = NSColor(calibratedRed: 0.12, green: 0.68, blue: 0.42, alpha: 1)
-    static let glanceOrange = NSColor(calibratedRed: 0.96, green: 0.51, blue: 0.14, alpha: 1)
+    static let glanceBlue = NSColor.systemBlue
+    static let glanceCyan = NSColor.systemTeal
+    static let glanceViolet = NSColor(name: "NetHaloMemoryAccent") { appearance in
+        if appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua {
+            return NSColor(srgbRed: 0.67, green: 0.60, blue: 0.83, alpha: 1)
+        }
+        return NSColor(srgbRed: 0.49, green: 0.41, blue: 0.67, alpha: 1)
+    }
+    static let glanceGreen = NSColor.systemGreen
+    static let glanceOrange = NSColor.systemOrange
 }

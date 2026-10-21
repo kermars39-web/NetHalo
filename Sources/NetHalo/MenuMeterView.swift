@@ -1,55 +1,28 @@
 import AppKit
 
-@MainActor
-final class MenuMeterView: NSView {
-    private static let verticalOpticalOffset: CGFloat = -1
+enum MenuMeterView {
+    static let imageSize = NSSize(width: 40, height: 22)
 
-    private var download = "0K"
-    private var upload = "0K"
-
-    override init(frame frameRect: NSRect) {
-        super.init(frame: frameRect)
-        translatesAutoresizingMaskIntoConstraints = false
+    static func image(download: String, upload: String) -> NSImage {
+        // The native status button tints this alpha mask for the menu bar's
+        // backdrop and highlighted state, independently of the panel appearance.
+        let image = NSImage(size: imageSize, flipped: false) { bounds in
+            drawRow(arrow: "↑", value: upload, y: 10.2, width: bounds.width)
+            drawRow(arrow: "↓", value: download, y: 0, width: bounds.width)
+            return true
+        }
+        image.isTemplate = true
+        image.accessibilityDescription = "上传 \(upload)/s，下载 \(download)/s"
+        return image
     }
 
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-
-    override func hitTest(_ point: NSPoint) -> NSView? {
-        // Let the underlying NSStatusBarButton receive every click.
-        nil
-    }
-
-    func update(download: String, upload: String) {
-        guard self.download != download || self.upload != upload else { return }
-        self.download = download
-        self.upload = upload
-        needsDisplay = true
-    }
-
-    override func draw(_ dirtyRect: NSRect) {
-        super.draw(dirtyRect)
-
-        drawRow(
-            arrow: "↑",
-            value: upload,
-            y: bounds.midY + 0.2 + Self.verticalOpticalOffset
-        )
-        drawRow(
-            arrow: "↓",
-            value: download,
-            y: max(0, bounds.midY - 10.5 + Self.verticalOpticalOffset)
-        )
-    }
-
-    private func drawRow(arrow: String, value: String, y: CGFloat) {
+    private static func drawRow(arrow: String, value: String, y: CGFloat, width: CGFloat) {
         let arrowFont = NSFont.systemFont(ofSize: 8.5, weight: .bold)
         let valueFont = NSFont.monospacedDigitSystemFont(ofSize: 8.5, weight: .medium)
         let unitFont = NSFont.systemFont(ofSize: 7.5, weight: .medium)
         let arrowAttributes: [NSAttributedString.Key: Any] = [
             .font: arrowFont,
-            .foregroundColor: NSColor.labelColor
+            .foregroundColor: NSColor.black
         ]
         let paragraph = NSMutableParagraphStyle()
         paragraph.alignment = .right
@@ -59,7 +32,7 @@ final class MenuMeterView: NSView {
             string: displayString,
             attributes: [
                 .font: valueFont,
-                .foregroundColor: NSColor.labelColor,
+                .foregroundColor: NSColor.black,
                 .paragraphStyle: paragraph
             ]
         )
@@ -74,7 +47,7 @@ final class MenuMeterView: NSView {
         let valueRect = NSRect(
             x: arrowRect.maxX,
             y: y,
-            width: max(0, bounds.width - arrowRect.maxX - 1),
+            width: max(0, width - arrowRect.maxX - 1),
             height: 11
         )
 

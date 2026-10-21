@@ -2,6 +2,23 @@
 
 NetHalo 的主要变更记录在此。All notable changes to NetHalo are documented here.
 
+## 1.4.1 — 2026-10-21
+
+- 内存卡片改用浅/深外观分别适配的低饱和灰紫色，减弱标题、趋势线、选中边框及底色的品红感；保留原生按钮状态。
+- Softened the memory card with appearance-aware muted violet accents.
+
+## 1.4 — 2026-10-21（本地试用，未单独公开发布 / Local preview only）
+
+### Changed
+
+- 菜单栏网速使用系统模板图像着色，面板开关同步原生按钮选中态。
+- 指标卡补齐按压、禁用和键盘焦点状态，使用系统动态强调色，并响应增强对比度设置。
+- Adopted native menu bar tinting and selection, and completed metric-card pressed, disabled, keyboard-focus, and increased-contrast states.
+
+### Fixed
+
+- 构建缓存改用可写目录，Release 构建不生成 dSYM，恢复受限环境中的应用打包。
+
 ## 1.3 — 2026-08-13
 
 ### Changed
